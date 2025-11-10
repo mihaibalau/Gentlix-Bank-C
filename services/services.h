@@ -34,6 +34,10 @@ int deleteAccountService(RepositoryFormat* repository, Account** loggedAccount);
 int editAccountService(Account** loggedAccount, const char* currentPassword, const char* password, const char* passwordConfirm, const char* accountType, const char* phoneNumber,
                        const char* firstName, const char* secondName, const char* day, const char* month, const char* year);
 
-
+// Transaction services
+int depositService(Account* account, const char* amount, const char* description, const char* day, const char* month, const char* year);
+int withdrawService(Account* account, const char* amount, const char* description, const char* day, const char* month, const char* year);
+int transferService(Account* account, const char* amount, const char* description, const char* receiverIBAN, const char* day, const char* month, const char* year);
+int paymentService(Account* account, const char* amount, const char* description, const char* day, const char* month, const char* year);
 
 #endif

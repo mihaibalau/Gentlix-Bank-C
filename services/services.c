@@ -3,6 +3,7 @@
 #include <string.h>
 #include "../domain/domain.h"
 #include "../repository/repository.h"
+#include <stdlib.h>
 
 ////////////////////
 //
@@ -363,7 +364,11 @@ int loginService(RepositoryFormat* repository, const char* username, const char*
     else if(!stringOnlyWithLetters(username))
         return -306; // Account tag can have only letters!
 
-    *loggedUser = loginRepository(repository, username, password);
+    Account* foundAccount = loginRepository(repository, username, password);
+    if (foundAccount == NULL) {
+        return -307; // Account not found or wrong password
+    }
+    *loggedUser = foundAccount;
     return 1;
 }
 
@@ -417,11 +422,14 @@ int createAccountService(RepositoryFormat* repository, const char* accountTag, c
     Date birthday = createDate(atoi(day), atoi(month), atoi(year));
 
     char iban[30];
-    char* uniqueIBAN;
+    char* uniqueIBAN = NULL;
     while (1) {
         generateRandomIBAN(iban);
         if (!ibanUsedInRepository(repository, iban)) {
-            char* uniqueIBAN = malloc(strlen(iban) + 1);
+            uniqueIBAN = malloc(strlen(iban) + 1);
+            if (uniqueIBAN == NULL) {
+                return -333; // Memory allocation failed
+            }
             strcpy(uniqueIBAN, iban);
             break;
         }
@@ -457,59 +465,249 @@ int createAccountService(RepositoryFormat* repository, const char* accountTag, c
     }
 
     *loggedAccount = newAccount;
+    return 1;
 }
 
 int deleteAccountService(RepositoryFormat* repository, Account** loggedAccount){
-    return removeAccountFromRepository(repository, getAccountTag(*loggedAccount));
+    if (repository == NULL || loggedAccount == NULL || *loggedAccount == NULL)
+        return -351; // Invalid parameters
+    
+    const char* accountTag = getAccountTag(*loggedAccount);
+    if (accountTag == NULL)
+        return -352; // Invalid account tag
+    
+    int result = removeAccountFromRepository(repository, accountTag);
+    if (result == 1) {
+        *loggedAccount = NULL; // Clear the logged account pointer
+    }
+    return result;
 }
 
 int editAccountService(Account** loggedAccount, const char* currentPassword, const char* password, const char* passwordConfirm, const char* accountType, const char* phoneNumber,
                          const char* firstName, const char* secondName, const char* day, const char* month, const char* year) {
 
+    if (loggedAccount == NULL || *loggedAccount == NULL)
+        return -340; // Invalid account
+    
+    if (currentPassword == NULL || strlen(currentPassword) == 0)
+        return -341; // Missing current password
+    
     if(differentPassword(currentPassword, getAccountPassword(*loggedAccount)))
         return -341; // The imputed password is wrong!
-    else if(differentPassword(password, passwordConfirm))
-        return -342; // The passwords do not match!
-    else if(!availableAccountType(accountType) && accountType != NULL)
+    
+    if (password != NULL && strlen(password) > 0) {
+        if (passwordConfirm == NULL || strlen(passwordConfirm) == 0)
+            return -342; // Missing password confirmation
+        if(differentPassword(password, passwordConfirm))
+            return -342; // The passwords do not match!
+    }
+    
+    if (accountType != NULL && strlen(accountType) > 0 && !availableAccountType(accountType))
         return -343; // Invalid account type!\nAvailable types: savings, checking, credit.
-    else if(!stringOnlyWithLetters(firstName) && firstName != NULL)
+    
+    if (firstName != NULL && strlen(firstName) > 0 && !stringOnlyWithLetters(firstName))
         return -344; // First name can have only letters!
-    else if(!stringOnlyWithLetters(secondName) && secondName != NULL)
+    
+    if (secondName != NULL && strlen(secondName) > 0 && !stringOnlyWithLetters(secondName))
         return -345; // Second name can have only letters!
-    else if(!stringOnlyWithDigits(phoneNumber) && phoneNumber != NULL)
+    
+    if (phoneNumber != NULL && strlen(phoneNumber) > 0 && !stringOnlyWithDigits(phoneNumber))
         return -346; // Phone number can have only digits!
 
-//    Date accountBirthday = getAccountBirthday(*loggedAccount);
-//    int newDay, newMonth, newYear;
-//
-//    if(day == NULL)
-//        newDay = getDay(accountBirthday);
-//    else
-//        newDay = atoi(day);
-//
-//    if(month == NULL)
-//        newMonth = getMonth(accountBirthday);
-//    else
-//        newMonth = atoi(month);
-//
-//    if(year == NULL)
-//        newYear = getYear(accountBirthday);
-//    else
-//        newYear = atoi(year);
-//
-//    if (validDate(day, month, year) != 1) {
-//        return -347; // Invalid birthday.
-//    }
-//
-//    Date newBirthday = createDate(newDay, newMonth, newYear);
-//    setAccountBirthday(*loggedAccount, newBirthday);
-
-    if (password != NULL)
+    if (password != NULL && strlen(password) > 0)
         setAccountPassword(*loggedAccount, password);
-    if (phoneNumber != NULL)
+    if (phoneNumber != NULL && strlen(phoneNumber) > 0)
         setAccountPhoneNumber(*loggedAccount, phoneNumber);
-    if (firstName != NULL)
+    if (firstName != NULL && strlen(firstName) > 0)
         setAccountFirstName(*loggedAccount, firstName);
-    if (secondName != NULL)
+    if (secondName != NULL && strlen(secondName) > 0)
         setAccountSecondName(*loggedAccount, secondName);
+    
+    return 1;
+}
+
+////////////////////
+//
+//  Transaction services
+//
+////////////////////
+
+int depositService(Account* account, const char* amount, const char* description, const char* day, const char* month, const char* year) {
+    if (account == NULL)
+        return -401; // Invalid account
+    
+    if (amount == NULL || strlen(amount) == 0)
+        return -402; // Missing amount
+    
+    if (description == NULL)
+        return -403; // Missing description
+    
+    if (strlen(description) > 99)
+        return -404; // Description too long
+    
+    if (!stringOnlyWithDigitsExtended(amount))
+        return -405; // Amount is not a number
+    
+    gdouble moneyAmount = g_ascii_strtod(amount, NULL);
+    if (moneyAmount <= 0)
+        return -406; // Invalid amount
+    
+    int dateResult = validDateForTransaction(day, month, year, account);
+    if (dateResult != 1)
+        return dateResult; // Invalid date
+    
+    Date transactionDate = createDate((short)atoi(day), (short)atoi(month), (short)atoi(year));
+    
+    Transaction* newTransaction = createTransaction(moneyAmount, "main", "deposit", "", "deposit", description, transactionDate);
+    if (newTransaction == NULL)
+        return -407; // Failed to create transaction
+    
+    int result = addTransactionForUser(account, newTransaction);
+    if (result != 1) {
+        destroyTransaction(newTransaction);
+        free(newTransaction);
+        return result;
+    }
+    
+    setAccountBalance(account, getAccountBalance(account) + moneyAmount);
+    
+    return 1;
+}
+
+int withdrawService(Account* account, const char* amount, const char* description, const char* day, const char* month, const char* year) {
+    if (account == NULL)
+        return -411; // Invalid account
+    
+    if (amount == NULL || strlen(amount) == 0)
+        return -412; // Missing amount
+    
+    if (description == NULL)
+        return -413; // Missing description
+    
+    if (strlen(description) > 99)
+        return -414; // Description too long
+    
+    if (!stringOnlyWithDigitsExtended(amount))
+        return -415; // Amount is not a number
+    
+    gdouble moneyAmount = g_ascii_strtod(amount, NULL);
+    if (moneyAmount <= 0)
+        return -416; // Invalid amount
+    
+    if (getAccountBalance(account) < moneyAmount)
+        return -417; // Insufficient balance
+    
+    int dateResult = validDateForTransaction(day, month, year, account);
+    if (dateResult != 1)
+        return dateResult; // Invalid date
+    
+    Date transactionDate = createDate((short)atoi(day), (short)atoi(month), (short)atoi(year));
+    
+    Transaction* newTransaction = createTransaction(moneyAmount, "main", "withdraw", "", "withdraw", description, transactionDate);
+    if (newTransaction == NULL)
+        return -418; // Failed to create transaction
+    
+    int result = addTransactionForUser(account, newTransaction);
+    if (result != 1) {
+        destroyTransaction(newTransaction);
+        free(newTransaction);
+        return result;
+    }
+    
+    setAccountBalance(account, getAccountBalance(account) - moneyAmount);
+    
+    return 1;
+}
+
+int transferService(Account* account, const char* amount, const char* description, const char* receiverIBAN, const char* day, const char* month, const char* year) {
+    if (account == NULL)
+        return -421; // Invalid account
+    
+    if (amount == NULL || strlen(amount) == 0)
+        return -422; // Missing amount
+    
+    if (description == NULL)
+        return -423; // Missing description
+    
+    if (receiverIBAN == NULL || strlen(receiverIBAN) == 0)
+        return -424; // Missing receiver IBAN
+    
+    if (strlen(description) > 99)
+        return -425; // Description too long
+    
+    if (!stringOnlyWithDigitsExtended(amount))
+        return -426; // Amount is not a number
+    
+    gdouble moneyAmount = g_ascii_strtod(amount, NULL);
+    if (moneyAmount <= 0)
+        return -427; // Invalid amount
+    
+    if (getAccountBalance(account) < moneyAmount)
+        return -428; // Insufficient balance
+    
+    int dateResult = validDateForTransaction(day, month, year, account);
+    if (dateResult != 1)
+        return dateResult; // Invalid date
+    
+    Date transactionDate = createDate((short)atoi(day), (short)atoi(month), (short)atoi(year));
+    
+    Transaction* newTransaction = createTransaction(moneyAmount, "main", "transfer", receiverIBAN, "transfer", description, transactionDate);
+    if (newTransaction == NULL)
+        return -429; // Failed to create transaction
+    
+    int result = addTransactionForUser(account, newTransaction);
+    if (result != 1) {
+        destroyTransaction(newTransaction);
+        free(newTransaction);
+        return result;
+    }
+    
+    setAccountBalance(account, getAccountBalance(account) - moneyAmount);
+    
+    return 1;
+}
+
+int paymentService(Account* account, const char* amount, const char* description, const char* day, const char* month, const char* year) {
+    if (account == NULL)
+        return -431; // Invalid account
+    
+    if (amount == NULL || strlen(amount) == 0)
+        return -432; // Missing amount
+    
+    if (description == NULL)
+        return -433; // Missing description
+    
+    if (strlen(description) > 99)
+        return -434; // Description too long
+    
+    if (!stringOnlyWithDigitsExtended(amount))
+        return -435; // Amount is not a number
+    
+    gdouble moneyAmount = g_ascii_strtod(amount, NULL);
+    if (moneyAmount <= 0)
+        return -436; // Invalid amount
+    
+    if (getAccountBalance(account) < moneyAmount)
+        return -437; // Insufficient balance
+    
+    int dateResult = validDateForTransaction(day, month, year, account);
+    if (dateResult != 1)
+        return dateResult; // Invalid date
+    
+    Date transactionDate = createDate((short)atoi(day), (short)atoi(month), (short)atoi(year));
+    
+    Transaction* newTransaction = createTransaction(moneyAmount, "main", "payment", "", "payment", description, transactionDate);
+    if (newTransaction == NULL)
+        return -438; // Failed to create transaction
+    
+    int result = addTransactionForUser(account, newTransaction);
+    if (result != 1) {
+        destroyTransaction(newTransaction);
+        free(newTransaction);
+        return result;
+    }
+    
+    setAccountBalance(account, getAccountBalance(account) - moneyAmount);
+    
+    return 1;
 }

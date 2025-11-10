@@ -96,7 +96,10 @@ int removeAccountFromRepository(RepositoryFormat* receivedRepository, const char
     int indexToRemove = -1;
 
     for (int i = 0; i < receivedRepository->numberOfElements; i++) {
-        if (strcmp(getAccountTag(receivedRepository->accounts[i]), accountTag) == 0) {
+        if (receivedRepository->accounts[i] == NULL) continue;
+        
+        const char* accountTagValue = getAccountTag(receivedRepository->accounts[i]);
+        if (accountTagValue != NULL && strcmp(accountTagValue, accountTag) == 0) {
             indexToRemove = i;
             break;
         }
@@ -126,7 +129,10 @@ Account* getAccountByTag(const RepositoryFormat* receivedRepository, const char*
         return NULL;
 
     for (int i = 0; i < receivedRepository->numberOfElements; i++) {
-        if (strcmp(getAccountTag(receivedRepository->accounts[i]), userTag) == 0) {
+        if (receivedRepository->accounts[i] == NULL) continue;
+        
+        const char* accountTag = getAccountTag(receivedRepository->accounts[i]);
+        if (accountTag != NULL && strcmp(accountTag, userTag) == 0) {
             return receivedRepository->accounts[i];
         }
     }
@@ -178,17 +184,30 @@ int isRepositoryFull(const RepositoryFormat* receivedRepository) {
 }
 
 int accountTagUsedRepo(const RepositoryFormat* receivedRepository, const char *checked_tag){
-    for(int index = 0; index < receivedRepository->numberOfElements; index++)
-        if(strcmp(checked_tag, getAccountTag(receivedRepository->accounts[index])))
+    if (receivedRepository == NULL || checked_tag == NULL)
+        return 0;
+    
+    for(int index = 0; index < receivedRepository->numberOfElements; index++) {
+        const char* accountTag = getAccountTag(receivedRepository->accounts[index]);
+        if (accountTag != NULL && strcmp(checked_tag, accountTag) == 0)
             return 1;
+    }
     return 0;
 }
 
 Account* loginRepository(RepositoryFormat* repository, const char* username, const char* password) {
+    if (repository == NULL || username == NULL || password == NULL)
+        return NULL;
 
     for (int i = 0; i < repository->numberOfElements; i++) {
         Account* account = repository->accounts[i];
-        if (strcmp(getAccountTag(account), username) == 0 && strcmp(getAccountPassword(account), password) == 0) {
+        if (account == NULL) continue;
+        
+        const char* accountTag = getAccountTag(account);
+        const char* accountPassword = getAccountPassword(account);
+        
+        if (accountTag != NULL && accountPassword != NULL &&
+            strcmp(accountTag, username) == 0 && strcmp(accountPassword, password) == 0) {
             return account; // Credentials match
         }
     }
@@ -197,14 +216,67 @@ Account* loginRepository(RepositoryFormat* repository, const char* username, con
 }
 
 int ibanUsedInRepository(const RepositoryFormat* repository, const char* iban) {
+    if (repository == NULL || iban == NULL)
+        return 0;
 
     for (int i = 0; i < repository->numberOfElements; i++) {
-        if (strcmp(getAccountIban(repository->accounts[i]), iban) == 0) {
+        if (repository->accounts[i] == NULL) continue;
+        
+        const char* accountIban = getAccountIban(repository->accounts[i]);
+        if (accountIban != NULL && strcmp(accountIban, iban) == 0) {
             return 1;
         }
     }
 
     return 0;
+}
+
+int getRepositoryCapacity(const RepositoryFormat* receivedRepository) {
+    if (receivedRepository == NULL)
+        return -1;
+    return receivedRepository->capacity;
+}
+
+Account* getAccountByIndex(const RepositoryFormat* receivedRepository, int index) {
+    if (receivedRepository == NULL)
+        return NULL;
+    
+    if (index < 0 || index >= receivedRepository->numberOfElements)
+        return NULL;
+    
+    return receivedRepository->accounts[index];
+}
+
+Account* findAccountByIban(const RepositoryFormat* receivedRepository, const char* iban) {
+    if (receivedRepository == NULL || iban == NULL)
+        return NULL;
+
+    for (int i = 0; i < receivedRepository->numberOfElements; i++) {
+        if (receivedRepository->accounts[i] == NULL) continue;
+        
+        const char* accountIban = getAccountIban(receivedRepository->accounts[i]);
+        if (accountIban != NULL && strcmp(accountIban, iban) == 0) {
+            return receivedRepository->accounts[i];
+        }
+    }
+
+    return NULL;
+}
+
+int clearRepository(RepositoryFormat* receivedRepository) {
+    if (receivedRepository == NULL)
+        return -1;
+
+    // Destroy all accounts
+    for (int i = 0; i < receivedRepository->numberOfElements; i++) {
+        if (receivedRepository->accounts[i] != NULL) {
+            destroyAccount(receivedRepository->accounts[i]);
+            free(receivedRepository->accounts[i]);
+        }
+    }
+
+    receivedRepository->numberOfElements = 0;
+    return 1;
 }
 
 

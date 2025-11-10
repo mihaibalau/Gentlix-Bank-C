@@ -1,7 +1,7 @@
 #include <gtk/gtk.h>
-#include <services.h>
-#include <gui.h>
-#include <repository.h>
+#include "services/services.h"
+#include "gui/gui.h"
+#include "repository/repository.h"
 
 // Create the GTK Application, activate the main window for it and return the run status.
 int main(int argc, char *argv[]) {

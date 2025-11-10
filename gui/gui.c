@@ -4,8 +4,21 @@
 #include "../repository/repository.h"
 #include "../services/services.h"
 
-Account** currentAccount = NULL;
+Account* currentAccount = NULL;
 GtkApplication* app = NULL;
+GtkWidget* main_menu = NULL;
+
+// Close the window get through gpointer data parameter
+void close_window(GtkWidget *widget, gpointer data) {
+    if (data != NULL)
+        gtk_widget_destroy(GTK_WIDGET(data));
+}
+
+// Show the window get through gpointer data parameter
+void show_window(GtkWidget *widget, gpointer data){
+    if (data != NULL)
+        gtk_widget_show(GTK_WIDGET(data));
+}
 
 // Open an error window and print the string from gchar *message parameter
 void show_error(gchar *message){
@@ -267,6 +280,67 @@ void handleErrorCode(int errorCode) {
         case -346:
             show_error("Phone number can have only digits!");
             break;
+        case -401:
+        case -411:
+        case -421:
+        case -431:
+            show_error("Invalid account");
+            break;
+        case -402:
+        case -412:
+        case -422:
+        case -432:
+            show_error("You need to add an amount!");
+            break;
+        case -403:
+        case -413:
+        case -423:
+        case -433:
+            show_error("Missing description");
+            break;
+        case -404:
+        case -414:
+        case -434:
+            show_error("The description is too long! You can use maximum 100 characters.");
+            break;
+        case -405:
+        case -415:
+        case -425:
+        case -435:
+            show_error("The amount isn't a number!");
+            break;
+        case -406:
+        case -416:
+        case -426:
+        case -436:
+            show_error("Invalid amount");
+            break;
+        case -407:
+        case -418:
+        case -429:
+        case -438:
+            show_error("Failed to create transaction");
+            break;
+        case -417:
+        case -428:
+        case -437:
+            show_error("You have a lower balance than inputed number!");
+            break;
+        case -424:
+            show_error("Missing receiver IBAN");
+            break;
+        case -307:
+            show_error("Account tag can't be found or wrong password!");
+            break;
+        case -351:
+            show_error("Invalid parameters for account deletion.");
+            break;
+        case -352:
+            show_error("Invalid account tag.");
+            break;
+        case -340:
+            show_error("Invalid account.");
+            break;
         default:
             show_error("An unexpected error occurred.");
             break;
@@ -324,185 +398,29 @@ void handleErrorCode(int errorCode) {
 //    }
 //}
 
-// Manage the inputs from new trancation interface and work with them inside the memory to remove money from user account
-// GtkApplication *app - isn't used inside the function but is required from previous gtk function call
-// gpointer data - provides the location inside the memory for inptus
-void withdraw_from_balance(GtkWidget *widget, gpointer data){
-//
-//    GtkWidget **entries = (GtkWidget **)data;
-//    const gchar *amount = gtk_entry_get_text(GTK_ENTRY(entries[0]));
-//    const gchar *description = gtk_entry_get_text(GTK_ENTRY(entries[1]));
-//    const gchar *day = gtk_entry_get_text(GTK_ENTRY(entries[2]));
-//    const gchar *month = gtk_entry_get_text(GTK_ENTRY(entries[3]));
-//    const gchar *year = gtk_entry_get_text(GTK_ENTRY(entries[4]));
-//
-//    short error_encountered = 0;
-//    gdouble money_amount;
-//
-//    if(strlen(amount) == 0){
-//        error_encountered = 1;
-//        show_error("You need to add an amount!");}
-//
-//    if(string_have_only_digits_extended(amount)) {
-//        money_amount = g_ascii_strtod(amount, NULL); // this function transorm an string of digits into a double number
-//        if (account_database[current_account].account_balace < money_amount){
-//            error_encountered = 1;
-//            show_error("You have a lower balance than inputed number!");}}
-//    else{
-//        error_encountered = 1;
-//        show_error("The amount isn't a number!");}
-//
-//    if(strlen(description) > 99){
-//        error_encountered = 1;
-//        show_error("The description is too long! You can use maximum 100 characters.");}
-//
-//    if(!check_date_for_transaction(day, month, year) && error_encountered == 0){
-//
-//        guint64 int_day = g_ascii_strtoull(day, NULL, 10);
-//        guint64 int_month = g_ascii_strtoull(month, NULL, 10);
-//        guint64 int_year = g_ascii_strtoull(year, NULL, 10);
-//
-//        account_database[current_account].transaction_index ++;
-//        int last_transaction_index = account_database[current_account].transaction_index;
-//
-//        account_database[current_account].account_balace -= money_amount;
-//        account_database[current_account].transaction[last_transaction_index].date.day = int_day;
-//        account_database[current_account].transaction[last_transaction_index].date.month = int_month;
-//        account_database[current_account].transaction[last_transaction_index].date.year = int_year;
-//        account_database[current_account].transaction[last_transaction_index].amount = money_amount;
-//        strcpy(account_database[current_account].transaction[last_transaction_index].description, description);
-//        strcpy(account_database[current_account].transaction[last_transaction_index].category, "withdraw");
-//
-//        gtk_widget_destroy(last_window);
-//        show_account_interface();
-//
-//    }
-//}
-
-// Manage the inputs from new trancation interface and work with them inside the memory to transfer money from user account to another one
-// GtkApplication *app - isn't used inside the function but is required from previous gtk function call
-// gpointer data - provides the location inside the memory for inptus
-//void make_a_transaction(GtkWidget *widget, gpointer data){
-//
-//    GtkWidget **entries = (GtkWidget **)data;
-//    const gchar *amount = gtk_entry_get_text(GTK_ENTRY(entries[0]));
-//    const gchar *description = gtk_entry_get_text(GTK_ENTRY(entries[1]));
-//    const gchar *day = gtk_entry_get_text(GTK_ENTRY(entries[2]));
-//    const gchar *month = gtk_entry_get_text(GTK_ENTRY(entries[3]));
-//    const gchar *year = gtk_entry_get_text(GTK_ENTRY(entries[4]));
-//
-//    short error_encountered = 0;
-//    gdouble money_amount;
-//
-//    if(strlen(amount) == 0){
-//        error_encountered = 1;
-//        show_error("You need to add an amount!");}
-//
-//    if(string_have_only_digits_extended(amount)) {
-//        money_amount = g_ascii_strtod(amount, NULL); // this function transorm an string of digits into a double number
-//        if (account_database[current_account].account_balace < money_amount){
-//            error_encountered = 1;
-//            show_error("You have a lower balance than inputed number!");}}
-//    else{
-//        error_encountered = 1;
-//        show_error("The amount isn't a number!");}
-//
-//    if(strlen(description) > 99){
-//        error_encountered = 1;
-//        show_error("The description is too long! You can use maximum 100 characters.");}
-//
-//    if(!check_date_for_transaction(day, month, year) && error_encountered == 0){
-//
-//        guint64 int_day = g_ascii_strtoull(day, NULL, 10);
-//        guint64 int_month = g_ascii_strtoull(month, NULL, 10);
-//        guint64 int_year = g_ascii_strtoull(year, NULL, 10);
-//
-//        account_database[current_account].transaction_index ++;
-//        int last_transaction_index = account_database[current_account].transaction_index;
-//
-//        account_database[current_account].account_balace -= money_amount;
-//        account_database[current_account].transaction[last_transaction_index].date.day = int_day;
-//        account_database[current_account].transaction[last_transaction_index].date.month = int_month;
-//        account_database[current_account].transaction[last_transaction_index].date.year = int_year;
-//        account_database[current_account].transaction[last_transaction_index].amount = money_amount;
-//        strcpy(account_database[current_account].transaction[last_transaction_index].description, description);
-//        strcpy(account_database[current_account].transaction[last_transaction_index].category, "transaction");
-//
-//        gtk_widget_destroy(last_window);
-//        show_account_interface();
-//
-//    }
-//}
-
-// Manage the inputs from new trancation interface and work with them inside the memory to remove money from user account
-// GtkApplication *app - isn't used inside the function but is required from previous gtk function call
-// gpointer data - provides the location inside the memory for inptus
-//void make_a_payment(GtkWidget *widget, gpointer data){
-//
-//    GtkWidget **entries = (GtkWidget **)data;
-//    const gchar *amount = gtk_entry_get_text(GTK_ENTRY(entries[0]));
-//    const gchar *description = gtk_entry_get_text(GTK_ENTRY(entries[1]));
-//    const gchar *day = gtk_entry_get_text(GTK_ENTRY(entries[2]));
-//    const gchar *month = gtk_entry_get_text(GTK_ENTRY(entries[3]));
-//    const gchar *year = gtk_entry_get_text(GTK_ENTRY(entries[4]));
-//
-//    short error_encountered = 0;
-//    gdouble money_amount;
-//
-//    if(strlen(amount) == 0){
-//        error_encountered = 1;
-//        show_error("You need to add an amount!");}
-//
-//    if(string_have_only_digits_extended(amount)) {
-//        money_amount = g_ascii_strtod(amount, NULL);
-//        if (account_database[current_account].account_balace < money_amount){
-//            error_encountered = 1;
-//            show_error("You have a lower balance than inputed number!");}}
-//    else{
-//        error_encountered = 1;
-//        show_error("The amount isn't a number!");
-//    }
-//
-//    if(strlen(description) > 99)
-//        show_error("The description is too long! You can use maximum 100 characters.");
-//
-//    if(!check_date_for_transaction(day, month, year) && error_encountered == 0){
-//
-//        guint64 int_day = g_ascii_strtoull(day, NULL, 10);
-//        guint64 int_month = g_ascii_strtoull(month, NULL, 10);
-//        guint64 int_year = g_ascii_strtoull(year, NULL, 10);
-//
-//        account_database[current_account].transaction_index ++;
-//        int last_transaction_index = account_database[current_account].transaction_index;
-//
-//        account_database[current_account].account_balace -= money_amount;
-//        account_database[current_account].transaction[last_transaction_index].date.day = int_day;
-//        account_database[current_account].transaction[last_transaction_index].date.month = int_month;
-//        account_database[current_account].transaction[last_transaction_index].date.year = int_year;
-//        account_database[current_account].transaction[last_transaction_index].amount = money_amount;
-//        strcpy(account_database[current_account].transaction[last_transaction_index].description, description);
-//        strcpy(account_database[current_account].transaction[last_transaction_index].category, "payment");
-//
-//        gtk_widget_destroy(last_window);
-//        show_account_interface();
-//
-//    }
-//}
-
 void logout_from_an_account(){
     currentAccount = NULL;
 }
 
 void delete_an_account(){
+    if (currentAccount == NULL || app == NULL) return;
+    
     RepositoryFormat* database = g_object_get_data(G_OBJECT(app), "database");
-    deleteAccountService(database, *currentAccount);
+    if (database != NULL) {
+        deleteAccountService(database, &currentAccount);
+    }
     currentAccount = NULL;
 }
 
 // Manage the inputs from edit interface
-// GtkApplication *app - isn't used inside the function but is required from previous gtk function call
-// gpointer data - provides the location inside the memory for inptus
-void edit_an_account(GtkApplication *app, gpointer data){
+// GtkWidget *widget - isn't used inside the function but is required from previous gtk function call
+// gpointer data - provides the location inside the memory for inputs
+void edit_an_account(GtkWidget *widget, gpointer data){
+
+    if (currentAccount == NULL || app == NULL) {
+        show_error("No account logged in!");
+        return;
+    }
 
     GtkWidget **entries = (GtkWidget **)data;
     const gchar *current_password = gtk_entry_get_text(GTK_ENTRY(entries[0]));
@@ -516,16 +434,52 @@ void edit_an_account(GtkApplication *app, gpointer data){
     const gchar *user_birthday_month = gtk_entry_get_text(GTK_ENTRY(entries[8]));
     const gchar *user_birthday_year = gtk_entry_get_text(GTK_ENTRY(entries[9]));
 
-    g_free(entries);
-
-    int resultCode = editAccountService(currentAccount, current_password, account_password, account_password2, account_type, user_phone_number, user_first_name, user_second_name,
+    int resultCode = editAccountService(&currentAccount, current_password, account_password, account_password2, account_type, user_phone_number, user_first_name, user_second_name,
                                           user_birthday_day, user_birthday_month, user_birthday_year);
 
     if(resultCode == 1) {
 
         GtkWidget *last_window = g_object_get_data(G_OBJECT(app), "last_window");
-        gtk_widget_destroy(last_window);
+        if (last_window != NULL)
+            gtk_widget_destroy(last_window);
 
+        show_account_interface();
+
+    } else {
+        handleErrorCode(resultCode);
+    }
+    
+    g_free(entries);
+}
+
+
+// Manage the inputs from login interface
+// GtkWidget *widget - isn't used inside the function but is required from previous gtk function call
+// gpointer data - provides the location inside the memory for inputs
+void login_to_an_account(GtkWidget *widget, gpointer data){
+
+    GtkWidget **entries = (GtkWidget **)data;
+    const gchar *account_tag = gtk_entry_get_text(GTK_ENTRY(entries[0]));
+    const gchar *account_password = gtk_entry_get_text(GTK_ENTRY(entries[1]));
+    g_free(entries);
+
+    if (app == NULL) {
+        show_error("Application not initialized!");
+        return;
+    }
+
+    RepositoryFormat* database = g_object_get_data(G_OBJECT(app), "database");
+    Account* loggedAccount = NULL;
+
+    int resultCode = loginService(database, account_tag, account_password, &loggedAccount);
+
+    if(resultCode == 1 && loggedAccount != NULL) {
+
+        GtkWidget *last_window = g_object_get_data(G_OBJECT(app), "last_window");
+        if (last_window != NULL)
+            gtk_widget_destroy(last_window);
+
+        currentAccount = loggedAccount;
         show_account_interface();
 
     } else {
@@ -533,42 +487,10 @@ void edit_an_account(GtkApplication *app, gpointer data){
     }
 }
 
-
-// Manage the inputs from login interface
-// GtkApplication *app - isn't used inside the function but is required from previous gtk function call
-// gpointer data - provides the location inside the memory for inptus
-void login_to_an_account(GtkApplication *app, gpointer data){
-
-    GtkWidget **entries = (GtkWidget **)data;
-    const gchar *account_tag = gtk_entry_get_text(GTK_ENTRY(entries[0]));
-    const gchar *account_password = gtk_entry_get_text(GTK_ENTRY(entries[1]));
-    g_free(entries);
-
-    RepositoryFormat* database = g_object_get_data(G_OBJECT(app), "database");
-    Account** loggedAccount = NULL;
-
-    int resultCode = loginService(database, account_tag, account_password, loggedAccount);
-
-    if(loggedAccount != NULL) {
-
-        GtkWidget *last_window = g_object_get_data(G_OBJECT(app), "last_window");
-        gtk_widget_destroy(last_window);
-
-        currentAccount = loggedAccount;
-        show_account_interface();
-
-    } else {
-        if (resultCode == 1)
-            show_error("Incorrect username or password!");
-        else
-            handleErrorCode(resultCode);
-    }
-}
-
 // Manage the inputs from register interface
-// GtkApplication *app - isn't used inside the function but is required from previous gtk function call
-// gpointer data - provides the location inside the memory for inptus
-void create_an_account(GtkApplication *app, gpointer data){
+// GtkWidget *widget - isn't used inside the function but is required from previous gtk function call
+// gpointer data - provides the location inside the memory for inputs
+void create_an_account(GtkWidget *widget, gpointer data){
 
     GtkWidget **entries = (GtkWidget **)data;
     const gchar *account_tag = gtk_entry_get_text(GTK_ENTRY(entries[0]));
@@ -583,16 +505,22 @@ void create_an_account(GtkApplication *app, gpointer data){
     const gchar *user_birthday_year = gtk_entry_get_text(GTK_ENTRY(entries[9]));
     g_free(entries);
 
+    if (app == NULL) {
+        show_error("Application not initialized!");
+        return;
+    }
+
     RepositoryFormat* database = g_object_get_data(G_OBJECT(app), "database");
     Account* loggedAccount = NULL;
 
     int resultCode = createAccountService(database, account_tag, account_password, account_password2, account_type, user_phone_number, user_first_name, user_second_name,
-                                  user_birthday_day, user_birthday_month, user_birthday_year, loggedAccount);
+                                  user_birthday_day, user_birthday_month, user_birthday_year, &loggedAccount);
 
-    if(loggedAccount != NULL) {
+    if(resultCode == 1 && loggedAccount != NULL) {
 
         GtkWidget *last_window = g_object_get_data(G_OBJECT(app), "last_window");
-        gtk_widget_destroy(last_window);
+        if (last_window != NULL)
+            gtk_widget_destroy(last_window);
 
         currentAccount = loggedAccount;
         show_account_interface();
@@ -603,328 +531,473 @@ void create_an_account(GtkApplication *app, gpointer data){
 }
 
 
+// Transaction callback functions
+void add_to_balance(GtkWidget *widget, gpointer data) {
+    if (currentAccount == NULL || app == NULL) {
+        show_error("No account logged in!");
+        return;
+    }
+
+    GtkWidget **entries = (GtkWidget **)data;
+    const gchar *amount = gtk_entry_get_text(GTK_ENTRY(entries[0]));
+    const gchar *description = gtk_entry_get_text(GTK_ENTRY(entries[1]));
+    const gchar *day = gtk_entry_get_text(GTK_ENTRY(entries[2]));
+    const gchar *month = gtk_entry_get_text(GTK_ENTRY(entries[3]));
+    const gchar *year = gtk_entry_get_text(GTK_ENTRY(entries[4]));
+
+    int resultCode = depositService(currentAccount, amount, description, day, month, year);
+    
+    if (resultCode == 1) {
+        GtkWidget *last_window = g_object_get_data(G_OBJECT(app), "last_window");
+        if (last_window != NULL)
+            gtk_widget_destroy(last_window);
+        show_account_interface();
+    } else {
+        handleErrorCode(resultCode);
+    }
+    
+    g_free(entries);
+}
+
+void withdraw_from_balance(GtkWidget *widget, gpointer data) {
+    if (currentAccount == NULL || app == NULL) {
+        show_error("No account logged in!");
+        return;
+    }
+
+    GtkWidget **entries = (GtkWidget **)data;
+    const gchar *amount = gtk_entry_get_text(GTK_ENTRY(entries[0]));
+    const gchar *description = gtk_entry_get_text(GTK_ENTRY(entries[1]));
+    const gchar *day = gtk_entry_get_text(GTK_ENTRY(entries[2]));
+    const gchar *month = gtk_entry_get_text(GTK_ENTRY(entries[3]));
+    const gchar *year = gtk_entry_get_text(GTK_ENTRY(entries[4]));
+
+    int resultCode = withdrawService(currentAccount, amount, description, day, month, year);
+    
+    if (resultCode == 1) {
+        GtkWidget *last_window = g_object_get_data(G_OBJECT(app), "last_window");
+        if (last_window != NULL)
+            gtk_widget_destroy(last_window);
+        show_account_interface();
+    } else {
+        handleErrorCode(resultCode);
+    }
+    
+    g_free(entries);
+}
+
+void make_a_payment(GtkWidget *widget, gpointer data) {
+    if (currentAccount == NULL || app == NULL) {
+        show_error("No account logged in!");
+        return;
+    }
+
+    GtkWidget **entries = (GtkWidget **)data;
+    const gchar *amount = gtk_entry_get_text(GTK_ENTRY(entries[0]));
+    const gchar *description = gtk_entry_get_text(GTK_ENTRY(entries[1]));
+    const gchar *day = gtk_entry_get_text(GTK_ENTRY(entries[2]));
+    const gchar *month = gtk_entry_get_text(GTK_ENTRY(entries[3]));
+    const gchar *year = gtk_entry_get_text(GTK_ENTRY(entries[4]));
+
+    int resultCode = paymentService(currentAccount, amount, description, day, month, year);
+    
+    if (resultCode == 1) {
+        GtkWidget *last_window = g_object_get_data(G_OBJECT(app), "last_window");
+        if (last_window != NULL)
+            gtk_widget_destroy(last_window);
+        show_account_interface();
+    } else {
+        handleErrorCode(resultCode);
+    }
+    
+    g_free(entries);
+}
+
+void make_a_transaction(GtkWidget *widget, gpointer data) {
+    if (currentAccount == NULL || app == NULL) {
+        show_error("No account logged in!");
+        return;
+    }
+
+    GtkWidget **entries = (GtkWidget **)data;
+    const gchar *amount = gtk_entry_get_text(GTK_ENTRY(entries[0]));
+    const gchar *description = gtk_entry_get_text(GTK_ENTRY(entries[1]));
+    const gchar *receiverIBAN = gtk_entry_get_text(GTK_ENTRY(entries[5])); // Assuming entries[5] is for IBAN
+    const gchar *day = gtk_entry_get_text(GTK_ENTRY(entries[2]));
+    const gchar *month = gtk_entry_get_text(GTK_ENTRY(entries[3]));
+    const gchar *year = gtk_entry_get_text(GTK_ENTRY(entries[4]));
+
+    int resultCode = transferService(currentAccount, amount, description, receiverIBAN, day, month, year);
+    
+    if (resultCode == 1) {
+        GtkWidget *last_window = g_object_get_data(G_OBJECT(app), "last_window");
+        if (last_window != NULL)
+            gtk_widget_destroy(last_window);
+        show_account_interface();
+    } else {
+        handleErrorCode(resultCode);
+    }
+    
+    g_free(entries);
+}
+
 // Create the new transaction interface with fields for informations and a menu which transaction types.
 // GtkWidget *widget - isn't used inside the function but is required from previous gtk function call
 // gpointer data - provides the window from which this menu was opened to hide it
 void show_new_transaction_interface(GtkWidget *widget, gpointer data) {
 
-//    GtkWidget *new_transaction_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-//    g_object_set_data(G_OBJECT(app), "last_window", new_transaction_window);
-//
-//    gtk_window_set_default_icon_from_file("images/bank_icon.png", NULL);
-//    gtk_window_set_title(GTK_WINDOW(new_transaction_window), "GentlixBank - Application");
-//    gtk_window_set_default_size(GTK_WINDOW(new_transaction_window), 800, 1000);
-//    gtk_window_maximize(GTK_WINDOW(new_transaction_window));
-//
-//    GtkWidget *overlay_main_box = gtk_overlay_new();
-//    gtk_container_add(GTK_CONTAINER(new_transaction_window), overlay_main_box);
-//    GtkWidget *image_app_background = gtk_image_new_from_file("images/app_background.png");
-//    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), image_app_background);
-//
-//    GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-//    gtk_box_set_spacing(GTK_BOX(main_box), 50);
-//    gtk_container_set_border_width(GTK_CONTAINER(main_box), 50);
-//
-//    GtkWidget *upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-//    gtk_widget_set_size_request(GTK_WIDGET(upper_box), -1, 400);
-//    gtk_box_pack_start(GTK_BOX(main_box), upper_box, TRUE, TRUE, 0);
-//
-//    GtkWidget *overlay_upper_box = gtk_overlay_new();
-//    gtk_box_pack_start(GTK_BOX(upper_box), overlay_upper_box, TRUE, TRUE, 0);
-//    GtkWidget *image_background = gtk_image_new_from_file("images/transactions_background.png");
-//    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), image_background);
-//
-//    GtkWidget *content_box_for_upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-//    GtkWidget *image_logo = gtk_image_new_from_file("images/bank_logo.png");
-//    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), image_logo, FALSE, FALSE, 65);
-//
-//    GtkWidget *text_title = gtk_label_new("New Transaction");
-//    const gchar *css_title_format = "label { font-size: 72px; color: #000000; font-weight: bold; }";
-//    GtkCssProvider *title_provider = gtk_css_provider_new();
-//    gtk_css_provider_load_from_data(title_provider, css_title_format, -1, NULL);
-//    GtkStyleContext *title_context = gtk_widget_get_style_context(text_title);
-//    gtk_style_context_add_provider(title_context, GTK_STYLE_PROVIDER(title_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-//    g_object_unref(title_provider);
-//
-//    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_title, FALSE, FALSE, 10);
-//    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), content_box_for_upper_box);
-//
-//    GtkWidget *lower_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 30);
-//    gtk_widget_set_size_request(GTK_WIDGET(lower_box), -1, 500);
-//    gtk_box_pack_start(GTK_BOX(main_box), lower_box, TRUE, TRUE, 0);
-//
-//    GtkWidget *grid = gtk_grid_new();
-//    gtk_widget_set_size_request(grid, 100, -1);
-//    gtk_grid_set_row_spacing(GTK_GRID(grid), 20);
-//    gtk_grid_set_column_spacing(GTK_GRID(grid), 20);
-//    gtk_box_pack_start(GTK_BOX(lower_box), grid, FALSE, FALSE, 30);
-//
-//    GtkWidget **entries = (GtkWidget **)g_malloc(6 * sizeof(GtkWidget *));
-//
-//    PangoAttrList *attr_list_text = pango_attr_list_new();
-//    PangoAttribute *attr_size_text = pango_attr_size_new(35 * PANGO_SCALE);
-//    pango_attr_list_insert(attr_list_text, attr_size_text);
-//    PangoAttribute *attr_bold_text = pango_attr_weight_new(PANGO_WEIGHT_SEMIBOLD);
-//    pango_attr_list_insert(attr_list_text, attr_bold_text);
-//
-//    PangoAttrList *attr_list_entry = pango_attr_list_new();
-//    PangoAttribute *attr_size_entry = pango_attr_size_new(25 * PANGO_SCALE);
-//    pango_attr_list_insert(attr_list_entry, attr_size_entry);
-//
-//    GtkWidget *username_label = gtk_label_new("                            Amount:");
-//    gtk_label_set_attributes(GTK_LABEL(username_label), attr_list_text);
-//    gtk_grid_attach(GTK_GRID(grid), username_label, 0, 0, 1, 1);
-//
-//    entries[0] = gtk_entry_new();
-//    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[0]), "Enter money amount");
-//    gtk_entry_set_attributes(GTK_ENTRY(entries[0]), attr_list_entry);
-//    gtk_entry_set_width_chars(GTK_ENTRY(entries[0]), 50);
-//    gtk_grid_attach(GTK_GRID(grid), entries[0], 1, 0, 1, 1);
-//
-//    GtkWidget *password_label = gtk_label_new("                          Description:");
-//    gtk_label_set_attributes(GTK_LABEL(password_label), attr_list_text);
-//    gtk_grid_attach(GTK_GRID(grid), password_label, 0, 1, 1, 1);
-//
-//    entries[1] = gtk_entry_new();
-//    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[1]), "Enter transfer's description");
-//    gtk_entry_set_attributes(GTK_ENTRY(entries[1]), attr_list_entry);
-//    gtk_entry_set_width_chars(GTK_ENTRY(entries[1]), 50);
-//    gtk_grid_attach(GTK_GRID(grid), entries[1], 1, 1, 1, 1);
-//
-//    GtkWidget *day_birthday_label = gtk_label_new("                   Transaction Day:");
-//    gtk_label_set_attributes(GTK_LABEL(day_birthday_label), attr_list_text);
-//    gtk_grid_attach(GTK_GRID(grid), day_birthday_label, 2, 0, 1, 1);
-//
-//    entries[2] = gtk_entry_new();
-//    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[2]), "Enter the day");
-//    gtk_entry_set_attributes(GTK_ENTRY(entries[2]), attr_list_entry);
-//    gtk_entry_set_width_chars(GTK_ENTRY(entries[2]), 50);
-//    gtk_grid_attach(GTK_GRID(grid), entries[2], 3, 0, 1, 1);
-//
-//    GtkWidget *month_birthday_label = gtk_label_new("                  Transaction Month:");
-//    gtk_label_set_attributes(GTK_LABEL(month_birthday_label), attr_list_text);
-//    gtk_grid_attach(GTK_GRID(grid), month_birthday_label, 2, 1, 1, 1);
-//
-//    entries[3] = gtk_entry_new();
-//    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[3]), "Enter the month");
-//    gtk_entry_set_attributes(GTK_ENTRY(entries[3]), attr_list_entry);
-//    gtk_entry_set_width_chars(GTK_ENTRY(entries[3]), 50);
-//    gtk_grid_attach(GTK_GRID(grid), entries[3], 3, 1, 1, 1);
-//
-//    GtkWidget *year_birthday_label = gtk_label_new("                  Transaction Year:");
-//    gtk_label_set_attributes(GTK_LABEL(year_birthday_label), attr_list_text);
-//    gtk_grid_attach(GTK_GRID(grid), year_birthday_label, 2, 2, 1, 1);
-//
-//    entries[4] = gtk_entry_new();
-//    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[4]), "Enter the year");
-//    gtk_entry_set_attributes(GTK_ENTRY(entries[4]), attr_list_entry);
-//    gtk_entry_set_width_chars(GTK_ENTRY(entries[4]), 50);
-//    gtk_grid_attach(GTK_GRID(grid), entries[4], 3, 2, 1, 1);
-//
-//    GtkWidget *deposit_button = gtk_button_new_with_label("Deposit");
-//    GtkWidget *withdraw_button = gtk_button_new_with_label("Withdraw");
-//    GtkWidget *pay_button = gtk_button_new_with_label("Pay");
-//    GtkWidget *transfer_button = gtk_button_new_with_label("Transfer");
-//    GtkWidget *cancel_button = gtk_button_new_with_label("Cancel");
-//
-//    const char *css = "label { font-size: 45px; font-weight: 600; }";
-//    GtkCssProvider *buttons_provider = gtk_css_provider_new();
-//    gtk_css_provider_load_from_data(buttons_provider, css, -1, NULL);
-//    GtkWidget *buttons[] = {deposit_button, withdraw_button, pay_button, transfer_button, cancel_button};
-//    for (int i = 0; i < G_N_ELEMENTS(buttons); i++) {
-//        GtkWidget *label = gtk_bin_get_child(GTK_BIN(buttons[i]));
-//        gtk_style_context_add_provider(gtk_widget_get_style_context(label), GTK_STYLE_PROVIDER(buttons_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-//        if (i == 0) {
-//            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(add_to_balance), entries);
-//        } else if (i == 1) {
-//            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(withdraw_from_balance), entries);
-//        } else if (i == 2) {
-//            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(make_a_payment), entries);
-//        } else if (i == 3) {
-//            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(make_a_transaction), entries);
-//        } else if (i == 4) {
-//            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_account_interface), NULL);
-//            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(close_window), new_transaction_window);
-//        }
-//        gtk_box_pack_start(GTK_BOX(lower_box), buttons[i], TRUE, TRUE, 0);
-//    }
-//    g_object_unref(buttons_provider);
-//    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), main_box);
-//    gtk_widget_show_all(GTK_WIDGET(new_transaction_window));
-//    gtk_widget_hide(data);
-//}
+    if (currentAccount == NULL) {
+        show_error("No account logged in!");
+        return;
+    }
+
+    GtkWidget *new_transaction_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    g_object_set_data(G_OBJECT(app), "last_window", new_transaction_window);
+
+    gtk_window_set_default_icon_from_file("images/bank_icon.png", NULL);
+    gtk_window_set_title(GTK_WINDOW(new_transaction_window), "GentlixBank - Application");
+    gtk_window_set_default_size(GTK_WINDOW(new_transaction_window), 800, 1000);
+    gtk_window_maximize(GTK_WINDOW(new_transaction_window));
+
+    GtkWidget *overlay_main_box = gtk_overlay_new();
+    gtk_container_add(GTK_CONTAINER(new_transaction_window), overlay_main_box);
+    GtkWidget *image_app_background = gtk_image_new_from_file("images/app_background.png");
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), image_app_background);
+
+    GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_box_set_spacing(GTK_BOX(main_box), 50);
+    gtk_container_set_border_width(GTK_CONTAINER(main_box), 50);
+
+    GtkWidget *upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_set_size_request(GTK_WIDGET(upper_box), -1, 400);
+    gtk_box_pack_start(GTK_BOX(main_box), upper_box, TRUE, TRUE, 0);
+
+    GtkWidget *overlay_upper_box = gtk_overlay_new();
+    gtk_box_pack_start(GTK_BOX(upper_box), overlay_upper_box, TRUE, TRUE, 0);
+    GtkWidget *image_background = gtk_image_new_from_file("images/transactions_background.png");
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), image_background);
+
+    GtkWidget *content_box_for_upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    GtkWidget *image_logo = gtk_image_new_from_file("images/bank_logo.png");
+    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), image_logo, FALSE, FALSE, 65);
+
+    GtkWidget *text_title = gtk_label_new("New Transaction");
+    const gchar *css_title_format = "label { font-size: 72px; color: #000000; font-weight: bold; }";
+    GtkCssProvider *title_provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(title_provider, css_title_format, -1, NULL);
+    GtkStyleContext *title_context = gtk_widget_get_style_context(text_title);
+    gtk_style_context_add_provider(title_context, GTK_STYLE_PROVIDER(title_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(title_provider);
+
+    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_title, FALSE, FALSE, 10);
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), content_box_for_upper_box);
+
+    GtkWidget *lower_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 30);
+    gtk_widget_set_size_request(GTK_WIDGET(lower_box), -1, 500);
+    gtk_box_pack_start(GTK_BOX(main_box), lower_box, TRUE, TRUE, 0);
+
+    GtkWidget *grid = gtk_grid_new();
+    gtk_widget_set_size_request(grid, 100, -1);
+    gtk_grid_set_row_spacing(GTK_GRID(grid), 20);
+    gtk_grid_set_column_spacing(GTK_GRID(grid), 20);
+    gtk_box_pack_start(GTK_BOX(lower_box), grid, FALSE, FALSE, 30);
+
+    GtkWidget **entries = (GtkWidget **)g_malloc(6 * sizeof(GtkWidget *));
+
+    PangoAttrList *attr_list_text = pango_attr_list_new();
+    PangoAttribute *attr_size_text = pango_attr_size_new(35 * PANGO_SCALE);
+    pango_attr_list_insert(attr_list_text, attr_size_text);
+    PangoAttribute *attr_bold_text = pango_attr_weight_new(PANGO_WEIGHT_SEMIBOLD);
+    pango_attr_list_insert(attr_list_text, attr_bold_text);
+
+    PangoAttrList *attr_list_entry = pango_attr_list_new();
+    PangoAttribute *attr_size_entry = pango_attr_size_new(25 * PANGO_SCALE);
+    pango_attr_list_insert(attr_list_entry, attr_size_entry);
+
+    GtkWidget *username_label = gtk_label_new("                            Amount:");
+    gtk_label_set_attributes(GTK_LABEL(username_label), attr_list_text);
+    gtk_grid_attach(GTK_GRID(grid), username_label, 0, 0, 1, 1);
+
+    entries[0] = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[0]), "Enter money amount");
+    gtk_entry_set_attributes(GTK_ENTRY(entries[0]), attr_list_entry);
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[0]), 50);
+    gtk_grid_attach(GTK_GRID(grid), entries[0], 1, 0, 1, 1);
+
+    GtkWidget *password_label = gtk_label_new("                          Description:");
+    gtk_label_set_attributes(GTK_LABEL(password_label), attr_list_text);
+    gtk_grid_attach(GTK_GRID(grid), password_label, 0, 1, 1, 1);
+
+    entries[1] = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[1]), "Enter transfer's description");
+    gtk_entry_set_attributes(GTK_ENTRY(entries[1]), attr_list_entry);
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[1]), 50);
+    gtk_grid_attach(GTK_GRID(grid), entries[1], 1, 1, 1, 1);
+
+    GtkWidget *day_birthday_label = gtk_label_new("                   Transaction Day:");
+    gtk_label_set_attributes(GTK_LABEL(day_birthday_label), attr_list_text);
+    gtk_grid_attach(GTK_GRID(grid), day_birthday_label, 2, 0, 1, 1);
+
+    entries[2] = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[2]), "Enter the day");
+    gtk_entry_set_attributes(GTK_ENTRY(entries[2]), attr_list_entry);
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[2]), 50);
+    gtk_grid_attach(GTK_GRID(grid), entries[2], 3, 0, 1, 1);
+
+    GtkWidget *month_birthday_label = gtk_label_new("                  Transaction Month:");
+    gtk_label_set_attributes(GTK_LABEL(month_birthday_label), attr_list_text);
+    gtk_grid_attach(GTK_GRID(grid), month_birthday_label, 2, 1, 1, 1);
+
+    entries[3] = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[3]), "Enter the month");
+    gtk_entry_set_attributes(GTK_ENTRY(entries[3]), attr_list_entry);
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[3]), 50);
+    gtk_grid_attach(GTK_GRID(grid), entries[3], 3, 1, 1, 1);
+
+    GtkWidget *year_birthday_label = gtk_label_new("                  Transaction Year:");
+    gtk_label_set_attributes(GTK_LABEL(year_birthday_label), attr_list_text);
+    gtk_grid_attach(GTK_GRID(grid), year_birthday_label, 2, 2, 1, 1);
+
+    entries[4] = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[4]), "Enter the year");
+    gtk_entry_set_attributes(GTK_ENTRY(entries[4]), attr_list_entry);
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[4]), 50);
+    gtk_grid_attach(GTK_GRID(grid), entries[4], 3, 2, 1, 1);
+
+    GtkWidget *iban_label = gtk_label_new("                    Receiver IBAN (for transfer):");
+    gtk_label_set_attributes(GTK_LABEL(iban_label), attr_list_text);
+    gtk_grid_attach(GTK_GRID(grid), iban_label, 0, 2, 1, 1);
+
+    entries[5] = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[5]), "Enter receiver IBAN (only for transfer)");
+    gtk_entry_set_attributes(GTK_ENTRY(entries[5]), attr_list_entry);
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[5]), 50);
+    gtk_grid_attach(GTK_GRID(grid), entries[5], 1, 2, 1, 1);
+
+    GtkWidget *deposit_button = gtk_button_new_with_label("Deposit");
+    GtkWidget *withdraw_button = gtk_button_new_with_label("Withdraw");
+    GtkWidget *pay_button = gtk_button_new_with_label("Pay");
+    GtkWidget *transfer_button = gtk_button_new_with_label("Transfer");
+    GtkWidget *cancel_button = gtk_button_new_with_label("Cancel");
+
+    const char *css = "label { font-size: 45px; font-weight: 600; }";
+    GtkCssProvider *buttons_provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(buttons_provider, css, -1, NULL);
+    GtkWidget *buttons[] = {deposit_button, withdraw_button, pay_button, transfer_button, cancel_button};
+    for (int i = 0; i < G_N_ELEMENTS(buttons); i++) {
+        GtkWidget *label = gtk_bin_get_child(GTK_BIN(buttons[i]));
+        gtk_style_context_add_provider(gtk_widget_get_style_context(label), GTK_STYLE_PROVIDER(buttons_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        if (i == 0) {
+            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(add_to_balance), entries);
+        } else if (i == 1) {
+            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(withdraw_from_balance), entries);
+        } else if (i == 2) {
+            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(make_a_payment), entries);
+        } else if (i == 3) {
+            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(make_a_transaction), entries);
+        } else if (i == 4) {
+            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_account_interface), NULL);
+            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(close_window), new_transaction_window);
+        }
+        gtk_box_pack_start(GTK_BOX(lower_box), buttons[i], TRUE, TRUE, 0);
+    }
+    g_object_unref(buttons_provider);
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), main_box);
+    gtk_widget_show_all(GTK_WIDGET(new_transaction_window));
+    if (data != NULL)
+        gtk_widget_hide(GTK_WIDGET(data));
+}
 
 // Create the all transactions interface and a grid table with all transactions for logged user
 // GtkWidget *widget - isn't used inside the function but is required from previous gtk function call
 // gpointer data - provides the window from which this menu was opened to hide it
 void show_all_transactions_interface(GtkWidget *widget, gpointer data) {
 
-//    GtkWidget *all_transactions_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-//    g_object_set_data(G_OBJECT(app), "last_window", all_transactions_window);
-//
-//    gtk_window_set_default_icon_from_file("images/bank_icon.png", NULL);
-//    gtk_window_set_title(GTK_WINDOW(all_transactions_window), "GentlixBank - Application");
-//    gtk_window_set_default_size(GTK_WINDOW(all_transactions_window), 800, 1000);
-//    gtk_window_maximize(GTK_WINDOW(all_transactions_window));
-//
-//    GtkWidget *overlay_main_box = gtk_overlay_new();
-//    gtk_container_add(GTK_CONTAINER(all_transactions_window), overlay_main_box);
-//    GtkWidget *image_app_background = gtk_image_new_from_file("images/app_background.png");
-//    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), image_app_background);
-//
-//    GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-//    gtk_box_set_spacing(GTK_BOX(main_box), 50);
-//    gtk_container_set_border_width(GTK_CONTAINER(main_box), 50);
-//
-//    GtkWidget *upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-//    gtk_widget_set_size_request(GTK_WIDGET(upper_box), -1, 400);
-//    gtk_box_pack_start(GTK_BOX(main_box), upper_box, TRUE, TRUE, 0);
-//
-//    GtkWidget *overlay_upper_box = gtk_overlay_new();
-//    gtk_box_pack_start(GTK_BOX(upper_box), overlay_upper_box, TRUE, TRUE, 0);
-//    GtkWidget *image_background = gtk_image_new_from_file("images/history_background.png");
-//    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), image_background);
-//
-//    GtkWidget *content_box_for_upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-//    GtkWidget *image_logo = gtk_image_new_from_file("images/bank_logo.png");
-//    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), image_logo, FALSE, FALSE, 55);
-//
-//    GtkWidget *text_title = gtk_label_new("Your Transactions");
-//    const gchar *css_title_format = "label { font-size: 72px; color: #000000; font-weight: bold; }";
-//    GtkCssProvider *title_provider = gtk_css_provider_new();
-//    gtk_css_provider_load_from_data(title_provider, css_title_format, -1, NULL);
-//    GtkStyleContext *title_context = gtk_widget_get_style_context(text_title);
-//    gtk_style_context_add_provider(title_context, GTK_STYLE_PROVIDER(title_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-//    g_object_unref(title_provider);
-//
-//    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_title, FALSE, FALSE, 10);
-//    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), content_box_for_upper_box);
-//
-//    GtkWidget *lower_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 30);
-//    gtk_widget_set_size_request(GTK_WIDGET(lower_box), -1, 400);
-//    gtk_box_pack_start(GTK_BOX(main_box), lower_box, TRUE, TRUE, 0);
-//
-//    GtkWidget *grid = gtk_grid_new();
-//    gtk_widget_set_size_request(grid, 100, -1);
-//    gtk_grid_set_row_spacing(GTK_GRID(grid), 20);
-//    gtk_grid_set_column_spacing(GTK_GRID(grid), 50);
-//    gtk_box_pack_start(GTK_BOX(lower_box), grid, FALSE, FALSE, 30);
-//
-//    PangoAttrList *attr_list_title = pango_attr_list_new();
-//    PangoAttribute *attr_size_title = pango_attr_size_new(35 * PANGO_SCALE);
-//    pango_attr_list_insert(attr_list_title, attr_size_title);
-//    PangoAttribute *attr_bold_title = pango_attr_weight_new(PANGO_WEIGHT_SEMIBOLD);
-//    pango_attr_list_insert(attr_list_title, attr_bold_title);
-//
-//    PangoAttrList *attr_list_content = pango_attr_list_new();
-//    PangoAttribute *attr_size_content = pango_attr_size_new(25 * PANGO_SCALE);
-//    pango_attr_list_insert(attr_list_content, attr_size_content);
-//
-//    GtkWidget *number_label = gtk_label_new("                                             Number");
-//    gtk_label_set_attributes(GTK_LABEL(number_label), attr_list_title);
-//    gtk_grid_attach(GTK_GRID(grid), number_label, 0, 0, 1, 1);
-//
-//    GtkWidget *type_label = gtk_label_new("Type");
-//    gtk_label_set_attributes(GTK_LABEL(type_label), attr_list_title);
-//    gtk_grid_attach(GTK_GRID(grid), type_label, 1, 0, 1, 1);
-//
-//    GtkWidget *amount_label = gtk_label_new("Amount");
-//    gtk_label_set_attributes(GTK_LABEL(amount_label), attr_list_title);
-//    gtk_grid_attach(GTK_GRID(grid), amount_label, 2, 0, 1, 1);
-//
-//    GtkWidget *day_label = gtk_label_new("Day");
-//    gtk_label_set_attributes(GTK_LABEL(day_label), attr_list_title);
-//    gtk_grid_attach(GTK_GRID(grid), day_label, 3, 0, 1, 1);
-//
-//    GtkWidget *month_label = gtk_label_new("Month");
-//    gtk_label_set_attributes(GTK_LABEL(month_label), attr_list_title);
-//    gtk_grid_attach(GTK_GRID(grid), month_label, 4, 0, 1, 1);
-//
-//    GtkWidget *year_label = gtk_label_new("Year");
-//    gtk_label_set_attributes(GTK_LABEL(year_label), attr_list_title);
-//    gtk_grid_attach(GTK_GRID(grid), year_label, 5, 0, 1, 1);
-//
-//    GtkWidget *description_label = gtk_label_new("Description");
-//    gtk_label_set_attributes(GTK_LABEL(description_label), attr_list_title);
-//    gtk_grid_attach(GTK_GRID(grid), description_label, 6, 0, 1, 1);
-//
-//    for(int index = 1; index <= account_database[current_account].transaction_index; index++)
-//    {
-//        gchar *print_number_format = g_strdup_printf("                                                             %d.", index);
-//        GtkWidget *number_text = gtk_label_new(NULL);
-//        gtk_label_set_text(GTK_LABEL(number_text), print_number_format);
-//        gtk_label_set_attributes(GTK_LABEL(number_text), attr_list_content);
-//        gtk_grid_attach(GTK_GRID(grid), number_text, 0, index, 1, 1);
-//        g_free(print_number_format);
-//
-//        gchar *print_type_format = g_strdup_printf("%s", account_database[current_account].transaction[index].category);
-//        GtkWidget *type_text = gtk_label_new(NULL);
-//        gtk_label_set_text(GTK_LABEL(type_text), print_type_format);
-//        gtk_label_set_attributes(GTK_LABEL(type_text), attr_list_content);
-//        gtk_grid_attach(GTK_GRID(grid), type_text, 1, index, 1, 1);
-//        g_free(print_type_format);
-//
-//        gchar *print_amount_format = g_strdup_printf("%.2f$", account_database[current_account].transaction[index].amount);
-//        GtkWidget *amount_text = gtk_label_new(NULL);
-//        gtk_label_set_text(GTK_LABEL(amount_text), print_amount_format);
-//        gtk_label_set_attributes(GTK_LABEL(amount_text), attr_list_content);
-//        gtk_grid_attach(GTK_GRID(grid), amount_text, 2, index, 1, 1);
-//        g_free(print_amount_format);
-//
-//        gchar *print_day_format = g_strdup_printf("%d", account_database[current_account].transaction[index].date.day);
-//        GtkWidget *day_text = gtk_label_new(NULL);
-//        gtk_label_set_text(GTK_LABEL(day_text), print_day_format);
-//        gtk_label_set_attributes(GTK_LABEL(day_text), attr_list_content);
-//        gtk_grid_attach(GTK_GRID(grid), day_text, 3, index, 1, 1);
-//        g_free(print_day_format);
-//
-//        gchar *print_month_format = g_strdup_printf("%d", account_database[current_account].transaction[index].date.month);
-//        GtkWidget *month_text = gtk_label_new(NULL);
-//        gtk_label_set_text(GTK_LABEL(month_text), print_month_format);
-//        gtk_label_set_attributes(GTK_LABEL(month_text), attr_list_content);
-//        gtk_grid_attach(GTK_GRID(grid), month_text, 4, index, 1, 1);
-//        g_free(print_month_format);
-//
-//        gchar *print_year_format = g_strdup_printf("%d", account_database[current_account].transaction[index].date.year);
-//        GtkWidget *year_text = gtk_label_new(NULL);
-//        gtk_label_set_text(GTK_LABEL(year_text), print_year_format);
-//        gtk_label_set_attributes(GTK_LABEL(year_text), attr_list_content);
-//        gtk_grid_attach(GTK_GRID(grid), year_text, 5, index, 1, 1);
-//        g_free(print_year_format);
-//
-//        gchar *print_description_format = g_strdup_printf("%s", account_database[current_account].transaction[index].description);
-//        GtkWidget *description_text = gtk_label_new(NULL);
-//        gtk_label_set_text(GTK_LABEL(description_text), print_description_format);
-//        gtk_label_set_attributes(GTK_LABEL(description_text), attr_list_content);
-//        gtk_grid_attach(GTK_GRID(grid), description_text, 6, index, 1, 1);
-//        g_free(print_description_format);
-//    }
-//
-//    GtkWidget *close_button = gtk_button_new_with_label("Close");
-//
-//    const char *css = "label { font-size: 45px; font-weight: 600; }";
-//    GtkCssProvider *buttons_provider = gtk_css_provider_new();
-//    gtk_css_provider_load_from_data(buttons_provider, css, -1, NULL);
-//    GtkWidget *buttons[] = {close_button};
-//    for (int i = 0; i < G_N_ELEMENTS(buttons); i++) {
-//        GtkWidget *label = gtk_bin_get_child(GTK_BIN(buttons[i]));
-//        gtk_style_context_add_provider(gtk_widget_get_style_context(label), GTK_STYLE_PROVIDER(buttons_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-//        if (i == 0) {
-//            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_account_interface), NULL);
-//            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(close_window), all_transactions_window);
-//        }
-//        gtk_box_pack_start(GTK_BOX(lower_box), buttons[i], FALSE, TRUE, 0);
-//    }
-//    g_object_unref(buttons_provider);
-//    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), main_box);
-//    gtk_widget_show_all(GTK_WIDGET(all_transactions_window));
-//    gtk_widget_hide(data);
+    if (currentAccount == NULL) {
+        show_error("No account logged in!");
+        return;
+    }
+
+    GtkWidget *all_transactions_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    g_object_set_data(G_OBJECT(app), "last_window", all_transactions_window);
+
+    gtk_window_set_default_icon_from_file("images/bank_icon.png", NULL);
+    gtk_window_set_title(GTK_WINDOW(all_transactions_window), "GentlixBank - Application");
+    gtk_window_set_default_size(GTK_WINDOW(all_transactions_window), 800, 1000);
+    gtk_window_maximize(GTK_WINDOW(all_transactions_window));
+
+    GtkWidget *overlay_main_box = gtk_overlay_new();
+    gtk_container_add(GTK_CONTAINER(all_transactions_window), overlay_main_box);
+    GtkWidget *image_app_background = gtk_image_new_from_file("images/app_background.png");
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), image_app_background);
+
+    GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_box_set_spacing(GTK_BOX(main_box), 50);
+    gtk_container_set_border_width(GTK_CONTAINER(main_box), 50);
+
+    GtkWidget *upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_set_size_request(GTK_WIDGET(upper_box), -1, 400);
+    gtk_box_pack_start(GTK_BOX(main_box), upper_box, TRUE, TRUE, 0);
+
+    GtkWidget *overlay_upper_box = gtk_overlay_new();
+    gtk_box_pack_start(GTK_BOX(upper_box), overlay_upper_box, TRUE, TRUE, 0);
+    GtkWidget *image_background = gtk_image_new_from_file("images/history_background.png");
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), image_background);
+
+    GtkWidget *content_box_for_upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    GtkWidget *image_logo = gtk_image_new_from_file("images/bank_logo.png");
+    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), image_logo, FALSE, FALSE, 55);
+
+    GtkWidget *text_title = gtk_label_new("Your Transactions");
+    const gchar *css_title_format = "label { font-size: 72px; color: #000000; font-weight: bold; }";
+    GtkCssProvider *title_provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(title_provider, css_title_format, -1, NULL);
+    GtkStyleContext *title_context = gtk_widget_get_style_context(text_title);
+    gtk_style_context_add_provider(title_context, GTK_STYLE_PROVIDER(title_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(title_provider);
+
+    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_title, FALSE, FALSE, 10);
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), content_box_for_upper_box);
+
+    GtkWidget *lower_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 30);
+    gtk_widget_set_size_request(GTK_WIDGET(lower_box), -1, 400);
+    gtk_box_pack_start(GTK_BOX(main_box), lower_box, TRUE, TRUE, 0);
+
+    GtkWidget *grid = gtk_grid_new();
+    gtk_widget_set_size_request(grid, 100, -1);
+    gtk_grid_set_row_spacing(GTK_GRID(grid), 20);
+    gtk_grid_set_column_spacing(GTK_GRID(grid), 50);
+    gtk_box_pack_start(GTK_BOX(lower_box), grid, FALSE, FALSE, 30);
+
+    PangoAttrList *attr_list_title = pango_attr_list_new();
+    PangoAttribute *attr_size_title = pango_attr_size_new(35 * PANGO_SCALE);
+    pango_attr_list_insert(attr_list_title, attr_size_title);
+    PangoAttribute *attr_bold_title = pango_attr_weight_new(PANGO_WEIGHT_SEMIBOLD);
+    pango_attr_list_insert(attr_list_title, attr_bold_title);
+
+    PangoAttrList *attr_list_content = pango_attr_list_new();
+    PangoAttribute *attr_size_content = pango_attr_size_new(25 * PANGO_SCALE);
+    pango_attr_list_insert(attr_list_content, attr_size_content);
+
+    GtkWidget *number_label = gtk_label_new("                                             Number");
+    gtk_label_set_attributes(GTK_LABEL(number_label), attr_list_title);
+    gtk_grid_attach(GTK_GRID(grid), number_label, 0, 0, 1, 1);
+
+    GtkWidget *type_label = gtk_label_new("Type");
+    gtk_label_set_attributes(GTK_LABEL(type_label), attr_list_title);
+    gtk_grid_attach(GTK_GRID(grid), type_label, 1, 0, 1, 1);
+
+    GtkWidget *amount_label = gtk_label_new("Amount");
+    gtk_label_set_attributes(GTK_LABEL(amount_label), attr_list_title);
+    gtk_grid_attach(GTK_GRID(grid), amount_label, 2, 0, 1, 1);
+
+    GtkWidget *day_label = gtk_label_new("Day");
+    gtk_label_set_attributes(GTK_LABEL(day_label), attr_list_title);
+    gtk_grid_attach(GTK_GRID(grid), day_label, 3, 0, 1, 1);
+
+    GtkWidget *month_label = gtk_label_new("Month");
+    gtk_label_set_attributes(GTK_LABEL(month_label), attr_list_title);
+    gtk_grid_attach(GTK_GRID(grid), month_label, 4, 0, 1, 1);
+
+    GtkWidget *year_label = gtk_label_new("Year");
+    gtk_label_set_attributes(GTK_LABEL(year_label), attr_list_title);
+    gtk_grid_attach(GTK_GRID(grid), year_label, 5, 0, 1, 1);
+
+    GtkWidget *description_label = gtk_label_new("Description");
+    gtk_label_set_attributes(GTK_LABEL(description_label), attr_list_title);
+    gtk_grid_attach(GTK_GRID(grid), description_label, 6, 0, 1, 1);
+
+    int transactionsNumber = getAccountTransactionsNumber(currentAccount);
+    for(int index = 0; index < transactionsNumber; index++)
+    {
+        Transaction* transaction = currentAccount->transactions[index];
+        if (transaction == NULL) continue;
+
+        gchar *print_number_format = g_strdup_printf("                                                             %d.", index + 1);
+        GtkWidget *number_text = gtk_label_new(NULL);
+        gtk_label_set_text(GTK_LABEL(number_text), print_number_format);
+        gtk_label_set_attributes(GTK_LABEL(number_text), attr_list_content);
+        gtk_grid_attach(GTK_GRID(grid), number_text, 0, index + 1, 1, 1);
+        g_free(print_number_format);
+
+        const char* transactionType = getTransactionType(transaction);
+        gchar *print_type_format = g_strdup_printf("%s", transactionType ? transactionType : "");
+        GtkWidget *type_text = gtk_label_new(NULL);
+        gtk_label_set_text(GTK_LABEL(type_text), print_type_format);
+        gtk_label_set_attributes(GTK_LABEL(type_text), attr_list_content);
+        gtk_grid_attach(GTK_GRID(grid), type_text, 1, index + 1, 1, 1);
+        g_free(print_type_format);
+
+        float transactionAmount = getTransactionAmount(transaction);
+        gchar *print_amount_format = g_strdup_printf("%.2f$", transactionAmount);
+        GtkWidget *amount_text = gtk_label_new(NULL);
+        gtk_label_set_text(GTK_LABEL(amount_text), print_amount_format);
+        gtk_label_set_attributes(GTK_LABEL(amount_text), attr_list_content);
+        gtk_grid_attach(GTK_GRID(grid), amount_text, 2, index + 1, 1, 1);
+        g_free(print_amount_format);
+
+        Date transactionDate = getTransactionDate(transaction);
+        gchar *print_day_format = g_strdup_printf("%d", transactionDate.day);
+        GtkWidget *day_text = gtk_label_new(NULL);
+        gtk_label_set_text(GTK_LABEL(day_text), print_day_format);
+        gtk_label_set_attributes(GTK_LABEL(day_text), attr_list_content);
+        gtk_grid_attach(GTK_GRID(grid), day_text, 3, index + 1, 1, 1);
+        g_free(print_day_format);
+
+        gchar *print_month_format = g_strdup_printf("%d", transactionDate.month);
+        GtkWidget *month_text = gtk_label_new(NULL);
+        gtk_label_set_text(GTK_LABEL(month_text), print_month_format);
+        gtk_label_set_attributes(GTK_LABEL(month_text), attr_list_content);
+        gtk_grid_attach(GTK_GRID(grid), month_text, 4, index + 1, 1, 1);
+        g_free(print_month_format);
+
+        gchar *print_year_format = g_strdup_printf("%d", transactionDate.year);
+        GtkWidget *year_text = gtk_label_new(NULL);
+        gtk_label_set_text(GTK_LABEL(year_text), print_year_format);
+        gtk_label_set_attributes(GTK_LABEL(year_text), attr_list_content);
+        gtk_grid_attach(GTK_GRID(grid), year_text, 5, index + 1, 1, 1);
+        g_free(print_year_format);
+
+        const char* transactionDescription = getTransactionDescription(transaction);
+        gchar *print_description_format = g_strdup_printf("%s", transactionDescription ? transactionDescription : "");
+        GtkWidget *description_text = gtk_label_new(NULL);
+        gtk_label_set_text(GTK_LABEL(description_text), print_description_format);
+        gtk_label_set_attributes(GTK_LABEL(description_text), attr_list_content);
+        gtk_grid_attach(GTK_GRID(grid), description_text, 6, index + 1, 1, 1);
+        g_free(print_description_format);
+    }
+
+    GtkWidget *close_button = gtk_button_new_with_label("Close");
+
+    const char *css = "label { font-size: 45px; font-weight: 600; }";
+    GtkCssProvider *buttons_provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(buttons_provider, css, -1, NULL);
+    GtkWidget *buttons[] = {close_button};
+    for (int i = 0; i < G_N_ELEMENTS(buttons); i++) {
+        GtkWidget *label = gtk_bin_get_child(GTK_BIN(buttons[i]));
+        gtk_style_context_add_provider(gtk_widget_get_style_context(label), GTK_STYLE_PROVIDER(buttons_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        if (i == 0) {
+            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_account_interface), NULL);
+            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(close_window), all_transactions_window);
+        }
+        gtk_box_pack_start(GTK_BOX(lower_box), buttons[i], FALSE, TRUE, 0);
+    }
+    g_object_unref(buttons_provider);
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), main_box);
+    gtk_widget_show_all(GTK_WIDGET(all_transactions_window));
+    if (data != NULL)
+        gtk_widget_hide(GTK_WIDGET(data));
 }
 
 // Create the edit account interface with same fields as register one but blank ones are ignored
 // GtkWidget *widget - isn't used inside the function but is required from previous gtk function call
 // gpointer data - provides the window from which this menu was opened to hide it
-void show_edit_account_interface(GtkApplication *app, gpointer data){
+void show_edit_account_interface(GtkWidget *widget, gpointer data){
+
+    if (currentAccount == NULL || app == NULL) {
+        show_error("No account logged in!");
+        return;
+    }
 
     GtkWidget *edit_account_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     g_object_set_data(G_OBJECT(app), "last_window", edit_account_window);
@@ -1163,9 +1236,16 @@ void show_account_interface() {
     gtk_style_context_add_provider(title_context, GTK_STYLE_PROVIDER(title_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
     g_object_unref(title_provider);
 
-    gchar *text_for_subtitle = g_strdup_printf("Welcome %s!\nAccount balance: %.2f$", account_database[current_account].first_name, account_database[current_account].account_balace);
+    gchar *text_for_subtitle;
+    if (currentAccount != NULL) {
+        text_for_subtitle = g_strdup_printf("Welcome %s!\nAccount balance: %.2f$", 
+            getAccountFirstName(currentAccount), getAccountBalance(currentAccount));
+    } else {
+        text_for_subtitle = g_strdup("Welcome!\nAccount balance: 0.00$");
+    }
     GtkWidget *text_subtitle = gtk_label_new(NULL);
     gtk_label_set_text(GTK_LABEL(text_subtitle), text_for_subtitle);
+    g_free(text_for_subtitle);
     const gchar *css_subtitle_format = "label { font-size: 48px; color: #E7E7E7; font-weight: 550; }";
     GtkCssProvider *subtitle_provider = gtk_css_provider_new();
     gtk_css_provider_load_from_data(subtitle_provider, css_subtitle_format, -1, NULL);
@@ -1200,17 +1280,23 @@ void show_account_interface() {
         } else if (i == 1) {
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_all_transactions_interface), your_account_window);
         } else if (i == 2) {
-            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_window), NULL);
-            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(close_window), NULL);
+            // Account statements - placeholder for future implementation
+            show_error("Account statements feature coming soon!");
         } else if (i == 3) {
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_edit_account_interface), your_account_window);
         } else if (i == 4) {
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(delete_an_account), NULL);
-            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_window), main_menu);
+            GtkWidget *main_window = g_object_get_data(G_OBJECT(app), "main_window");
+            if (main_window != NULL) {
+                g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_window), main_window);
+            }
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(close_window), your_account_window);
         } else if (i == 5) {
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(logout_from_an_account), NULL);
-            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_window), main_menu);
+            GtkWidget *main_window = g_object_get_data(G_OBJECT(app), "main_window");
+            if (main_window != NULL) {
+                g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_window), main_window);
+            }
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(close_window), your_account_window);
         }
         gtk_box_pack_start(GTK_BOX(lower_box), buttons[i], TRUE, TRUE, 0);
@@ -1580,6 +1666,7 @@ void activate_main_menu(GtkApplication *newApp, gpointer data) {
     // More about app layout and format inside the documentation file
     GtkWidget * main_window = gtk_application_window_new(newApp); // The main_window with main menu for app
     app = newApp;
+    main_menu = main_window;
     g_object_set_data(G_OBJECT(newApp), "main_window", main_window); // The main main_window is saved in a global variable to be able from any function to show or hide it
 
     gtk_window_set_default_icon_from_file("images/bank_icon.png", NULL);

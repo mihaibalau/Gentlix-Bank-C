@@ -2,82 +2,125 @@
 #include <string.h>
 #include "domain.h"
 
-Affiliate* createAffiliate(const char* tag, const char* firstName, const char* second_name,
-                             const char* iban, const char* activity_domain, const char* phone) {
+Affiliate* createAffiliates(const char* tag, const char* firstName, const char* secondName,
+                             const char* iban, const char* activityDomain, const char* phone) {
+    if (tag == NULL || firstName == NULL || secondName == NULL || 
+        iban == NULL || activityDomain == NULL || phone == NULL) {
+        return NULL;
+    }
+
     Affiliate* affiliate = (Affiliate*)malloc(sizeof(Affiliate));
     if (affiliate == NULL) return NULL;
 
     affiliate->tag = strdup(tag);
     affiliate->firstName = strdup(firstName);
-    affiliate->secondName = strdup(second_name);
+    affiliate->secondName = strdup(secondName);
     affiliate->iban = strdup(iban);
-    affiliate->activityDomain = strdup(activity_domain);
+    affiliate->activityDomain = strdup(activityDomain);
     affiliate->phone = strdup(phone);
+
+    // Check if any strdup failed
+    if (affiliate->tag == NULL || affiliate->firstName == NULL || affiliate->secondName == NULL ||
+        affiliate->iban == NULL || affiliate->activityDomain == NULL || affiliate->phone == NULL) {
+        // Clean up what was allocated
+        free(affiliate->tag);
+        free(affiliate->firstName);
+        free(affiliate->secondName);
+        free(affiliate->iban);
+        free(affiliate->activityDomain);
+        free(affiliate->phone);
+        free(affiliate);
+        return NULL;
+    }
 
     return affiliate;
 }
 
-void destroyAffiliate(Affiliate* Affiliate) {
-    if (Affiliate == NULL) return;
-    free(Affiliate->tag);
-    free(Affiliate->firstName);
-    free(Affiliate->secondName);
-    free(Affiliate->iban);
-    free(Affiliate->activityDomain);
-    free(Affiliate->phone);
-    free(Affiliate);
+void destroyAffiliates(Affiliate* affiliates) {
+    if (affiliates == NULL) return;
+    free(affiliates->tag);
+    free(affiliates->firstName);
+    free(affiliates->secondName);
+    free(affiliates->iban);
+    free(affiliates->activityDomain);
+    free(affiliates->phone);
+    free(affiliates);
 }
 
-const char* getAffiliateTag(const Affiliate* Affiliate) {
-    return Affiliate->tag;
+const char* getAffiliatesTag(const Affiliate* affiliates) {
+    if (affiliates == NULL) return NULL;
+    return affiliates->tag;
 }
 
-const char* getAffiliateFirstName(const Affiliate* Affiliate) {
-    return Affiliate->firstName;
+const char* getAffiliatesFirstName(const Affiliate* affiliates) {
+    if (affiliates == NULL) return NULL;
+    return affiliates->firstName;
 }
 
-const char* getAffiliateSecondName(const Affiliate* Affiliate) {
-    return Affiliate->secondName;
+const char* getAffiliatesSecondName(const Affiliate* affiliates) {
+    if (affiliates == NULL) return NULL;
+    return affiliates->secondName;
 }
 
-const char* getAffiliateIban(const Affiliate* Affiliate) {
-    return Affiliate->iban;
+const char* getAffiliatesIban(const Affiliate* affiliates) {
+    if (affiliates == NULL) return NULL;
+    return affiliates->iban;
 }
 
-const char* getAffiliateActivityDomain(const Affiliate* Affiliate) {
-    return Affiliate->activityDomain;
+const char* getAffiliatesActivityDomain(const Affiliate* affiliates) {
+    if (affiliates == NULL) return NULL;
+    return affiliates->activityDomain;
 }
 
-const char* getAffiliatePhone(const Affiliate* Affiliate) {
-    return Affiliate->phone;
+const char* getAffiliatesPhone(const Affiliate* affiliates) {
+    if (affiliates == NULL) return NULL;
+    return affiliates->phone;
 }
 
-void setAffiliateTag(Affiliate* Affiliate, const char* tag) {
-    free(Affiliate->tag);
-    Affiliate->tag = strdup(tag);
+void setAffiliatesTag(Affiliate* affiliates, const char* tag) {
+    if (affiliates == NULL || tag == NULL) return;
+    char* newTag = strdup(tag);
+    if (newTag == NULL) return; // strdup failed, keep old value
+    free(affiliates->tag);
+    affiliates->tag = newTag;
 }
 
-void setAffiliateFirstName(Affiliate* Affiliate, const char* firstName) {
-    free(Affiliate->firstName);
-    Affiliate->firstName = strdup(firstName);
+void setAffiliatesFirstName(Affiliate* affiliates, const char* firstName) {
+    if (affiliates == NULL || firstName == NULL) return;
+    char* newFirstName = strdup(firstName);
+    if (newFirstName == NULL) return;
+    free(affiliates->firstName);
+    affiliates->firstName = newFirstName;
 }
 
-void setAffiliateSecondName(Affiliate* Affiliate, const char* second_name) {
-    free(Affiliate->secondName);
-    Affiliate->secondName = strdup(second_name);
+void setAffiliatesSecondName(Affiliate* affiliates, const char* secondName) {
+    if (affiliates == NULL || secondName == NULL) return;
+    char* newSecondName = strdup(secondName);
+    if (newSecondName == NULL) return;
+    free(affiliates->secondName);
+    affiliates->secondName = newSecondName;
 }
 
-void setAffiliateIban(Affiliate* Affiliate, const char* iban) {
-    free(Affiliate->iban);
-    Affiliate->iban = strdup(iban);
+void setAffiliatesIban(Affiliate* affiliates, const char* iban) {
+    if (affiliates == NULL || iban == NULL) return;
+    char* newIban = strdup(iban);
+    if (newIban == NULL) return;
+    free(affiliates->iban);
+    affiliates->iban = newIban;
 }
 
-void setAffiliateActivityDomain(Affiliate* Affiliate, const char* activity_domain) {
-    free(Affiliate->activityDomain);
-    Affiliate->activityDomain = strdup(activity_domain);
+void setAffiliatesActivityDomain(Affiliate* affiliates, const char* activityDomain) {
+    if (affiliates == NULL || activityDomain == NULL) return;
+    char* newActivityDomain = strdup(activityDomain);
+    if (newActivityDomain == NULL) return;
+    free(affiliates->activityDomain);
+    affiliates->activityDomain = newActivityDomain;
 }
 
-void setAffiliatePhone(Affiliate* Affiliate, const char* phone) {
-    free(Affiliate->phone);
-    Affiliate->phone = strdup(phone);
+void setAffiliatesPhone(Affiliate* affiliates, const char* phone) {
+    if (affiliates == NULL || phone == NULL) return;
+    char* newPhone = strdup(phone);
+    if (newPhone == NULL) return;
+    free(affiliates->phone);
+    affiliates->phone = newPhone;
 }

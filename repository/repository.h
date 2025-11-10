@@ -21,4 +21,10 @@ int accountTagUsedRepo(const RepositoryFormat* receivedRepository, const char *c
 int ibanUsedInRepository(const RepositoryFormat* repository, const char* iban);
 Account* loginRepository(RepositoryFormat* repository, const char* username, const char* password);
 
+// Additional utility functions
+int getRepositoryCapacity(const RepositoryFormat* receivedRepository);
+Account* getAccountByIndex(const RepositoryFormat* receivedRepository, int index);
+Account* findAccountByIban(const RepositoryFormat* receivedRepository, const char* iban);
+int clearRepository(RepositoryFormat* receivedRepository);
+
 #endif
