@@ -550,16 +550,39 @@ void edit_an_account(GtkWidget *widget, gpointer data){
     const gchar *current_password = gtk_entry_get_text(GTK_ENTRY(entries[0]));
     const gchar *account_password = gtk_entry_get_text(GTK_ENTRY(entries[1]));
     const gchar *account_password2 = gtk_entry_get_text(GTK_ENTRY(entries[2]));
-    const gchar *account_type = gtk_entry_get_text(GTK_ENTRY(entries[3]));
+    
+    // Get account type from combobox
+    gchar *account_type = NULL;
+    if (GTK_IS_COMBO_BOX(entries[3])) {
+        account_type = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(entries[3]));
+        if (account_type == NULL) account_type = g_strdup("");
+    } else {
+        account_type = g_strdup("");
+    }
+    
     const gchar *user_phone_number = gtk_entry_get_text(GTK_ENTRY(entries[4]));
-    const gchar *user_first_name = gtk_entry_get_text(GTK_ENTRY(entries[5]));
-    const gchar *user_second_name = gtk_entry_get_text(GTK_ENTRY(entries[6]));
-    const gchar *user_birthday_day = gtk_entry_get_text(GTK_ENTRY(entries[7]));
-    const gchar *user_birthday_month = gtk_entry_get_text(GTK_ENTRY(entries[8]));
-    const gchar *user_birthday_year = gtk_entry_get_text(GTK_ENTRY(entries[9]));
+    
+    // Parse full name into first and second name
+    const gchar *full_name = gtk_entry_get_text(GTK_ENTRY(entries[5]));
+    gchar **name_parts = g_strsplit(full_name, " ", 2);
+    const gchar *user_first_name = (name_parts != NULL && name_parts[0] != NULL) ? name_parts[0] : "";
+    const gchar *user_second_name = (name_parts != NULL && name_parts[1] != NULL) ? name_parts[1] : "";
+    
+    // Parse birthday from DD/MM/YYYY format
+    const gchar *birthday_str = gtk_entry_get_text(GTK_ENTRY(entries[6]));
+    gchar **date_parts = g_strsplit(birthday_str, "/", 3);
+    const gchar *user_birthday_day = (date_parts != NULL && date_parts[0] != NULL) ? date_parts[0] : "";
+    const gchar *user_birthday_month = (date_parts != NULL && date_parts[1] != NULL) ? date_parts[1] : "";
+    const gchar *user_birthday_year = (date_parts != NULL && date_parts[2] != NULL) ? date_parts[2] : "";
 
     int resultCode = editAccountService(&currentAccount, current_password, account_password, account_password2, account_type, user_phone_number, user_first_name, user_second_name,
                                           user_birthday_day, user_birthday_month, user_birthday_year);
+
+    // Free allocated strings
+    g_free(account_type);
+    if (name_parts != NULL) g_strfreev(name_parts);
+    if (date_parts != NULL) g_strfreev(date_parts);
+    g_free(entries);
 
     if(resultCode == 1) {
 
@@ -572,8 +595,6 @@ void edit_an_account(GtkWidget *widget, gpointer data){
     } else {
         handleErrorCode(resultCode);
     }
-    
-    g_free(entries);
 }
 
 
@@ -1274,181 +1295,275 @@ void show_edit_account_interface(GtkWidget *widget, gpointer data){
     GtkWidget *overlay_main_box = gtk_overlay_new();
     gtk_container_add(GTK_CONTAINER(edit_account_window), overlay_main_box);
     GtkWidget *image_app_background = gtk_image_new_from_file("images/app_background.png");
+    gtk_widget_set_sensitive(image_app_background, FALSE);  // Allow clicks to pass through
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), image_app_background);
 
     GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_box_set_spacing(GTK_BOX(main_box), 50);
+    gtk_box_set_spacing(GTK_BOX(main_box), 0);
     gtk_container_set_border_width(GTK_CONTAINER(main_box), 50);
 
-    GtkWidget *upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-    gtk_widget_set_size_request(GTK_WIDGET(upper_box), -1, 320);
-    gtk_box_pack_start(GTK_BOX(main_box), upper_box, TRUE, TRUE, 0);
-
-    GtkWidget *overlay_upper_box = gtk_overlay_new();
-    gtk_box_pack_start(GTK_BOX(upper_box), overlay_upper_box, TRUE, TRUE, 0);
-    GtkWidget *image_background = gtk_image_new_from_file("images/main_background.jpg");
-    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), image_background);
-
-    GtkWidget *content_box_for_upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    // Spacer to push header to center
+    GtkWidget *spacer_top = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_sensitive(spacer_top, FALSE);
+    gtk_box_pack_start(GTK_BOX(main_box), spacer_top, TRUE, TRUE, 0);
+    
+    // Header box with logo and title side by side (centered like login/register)
+    GtkWidget *header_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 20);
+    gtk_widget_set_halign(header_box, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_top(header_box, 30);
+    gtk_widget_set_margin_bottom(header_box, 20);
+    
+    // Logo on the left
     GtkWidget *image_logo = gtk_image_new_from_file("images/bank_logo.png");
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), image_logo, FALSE, FALSE, 50);
+    gtk_box_pack_start(GTK_BOX(header_box), image_logo, FALSE, FALSE, 0);
 
+    // Title on the right (centered vertically with logo)
     GtkWidget *text_title = gtk_label_new("Edit account");
-    const gchar *css_title_format = "label { font-size: 72px; color: #FFDFAF; font-weight: bold; }";
-    GtkCssProvider *title_provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(title_provider, css_title_format, -1, NULL);
-    GtkStyleContext *title_context = gtk_widget_get_style_context(text_title);
-    gtk_style_context_add_provider(title_context, GTK_STYLE_PROVIDER(title_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    g_object_unref(title_provider);
+    style_title_label(text_title, "#FFDFAF");
+    gtk_widget_set_valign(text_title, GTK_ALIGN_CENTER);
+    gtk_box_pack_start(GTK_BOX(header_box), text_title, FALSE, FALSE, 0);
+    
+    gtk_box_pack_start(GTK_BOX(main_box), header_box, FALSE, FALSE, 0);
+    
+    // Small spacer between header and form card
+    GtkWidget *card_spacer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_size_request(card_spacer, -1, 20);
+    gtk_widget_set_sensitive(card_spacer, FALSE);
+    gtk_box_pack_start(GTK_BOX(main_box), card_spacer, FALSE, FALSE, 0);
 
-    GtkWidget *text_subtitle = gtk_label_new("Update your account details!\nBlank ones will be ignored.");
-    const gchar *css_subtitle_format = "label { font-size: 48px; color: #E7E7E7; font-weight: 550; }";
-    GtkCssProvider *subtitle_provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(subtitle_provider, css_subtitle_format, -1, NULL);
-    GtkStyleContext *subtitle_context = gtk_widget_get_style_context(text_subtitle);
-    gtk_style_context_add_provider(subtitle_context, GTK_STYLE_PROVIDER(subtitle_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    g_object_unref(subtitle_provider);
+    // Form card container (same size as register)
+    GtkWidget *form_card = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_set_halign(form_card, GTK_ALIGN_CENTER);
+    gtk_widget_set_size_request(form_card, 500, -1);
+    gtk_container_set_border_width(GTK_CONTAINER(form_card), 30);
+    
+    // Style the form card with background and yellow border
+    const gchar *card_css = 
+        "box { "
+        "background-color: #FFFFFF; "
+        "border-radius: 12px; "
+        "border: 3px solid #FFD700; "
+        "padding: 30px; "
+        "}";
+    GtkCssProvider *card_provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(card_provider, card_css, -1, NULL);
+    GtkStyleContext *card_context = gtk_widget_get_style_context(form_card);
+    gtk_style_context_add_provider(card_context, GTK_STYLE_PROVIDER(card_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(card_provider);
+    
+    gtk_box_pack_start(GTK_BOX(main_box), form_card, FALSE, FALSE, 0);
+    
+    // Spacer to push buttons to bottom
+    GtkWidget *spacer_bottom = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_sensitive(spacer_bottom, FALSE);
+    gtk_box_pack_start(GTK_BOX(main_box), spacer_bottom, TRUE, TRUE, 0);
 
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_title, FALSE, FALSE, 10);
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_subtitle, FALSE, FALSE, 0);
-    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), content_box_for_upper_box);
-
-    GtkWidget *lower_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 30);
-    gtk_widget_set_size_request(GTK_WIDGET(lower_box), -1, 400);
-    gtk_box_pack_start(GTK_BOX(main_box), lower_box, TRUE, TRUE, 0);
-
-    GtkWidget *grid = gtk_grid_new();
-    gtk_widget_set_size_request(grid, 1000, -1);
-    gtk_grid_set_row_spacing(GTK_GRID(grid), 20);
-    gtk_grid_set_column_spacing(GTK_GRID(grid), 20);
-    gtk_box_pack_start(GTK_BOX(lower_box), grid, FALSE, FALSE, 30);
-
-    GtkWidget **entries = (GtkWidget **)g_malloc(11 * sizeof(GtkWidget *));
-
-    PangoAttrList *attr_list_text = pango_attr_list_new();
-    PangoAttribute *attr_size_text = pango_attr_size_new(35 * PANGO_SCALE);
-    pango_attr_list_insert(attr_list_text, attr_size_text);
-    PangoAttribute *attr_bold_text = pango_attr_weight_new(PANGO_WEIGHT_SEMIBOLD);
-    pango_attr_list_insert(attr_list_text, attr_bold_text);
-
-    PangoAttrList *attr_list_entry = pango_attr_list_new();
-    PangoAttribute *attr_size_entry = pango_attr_size_new(25 * PANGO_SCALE);
-    pango_attr_list_insert(attr_list_entry, attr_size_entry);
-
-    GtkWidget *username_label = gtk_label_new("                       Current Password:");
-    gtk_label_set_attributes(GTK_LABEL(username_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), username_label, 0, 0, 1, 1);
-
+    // Allocate entries array: 0=current_password, 1=new_password, 2=confirm_password, 3=account_type, 4=phone, 5=name, 6=birthday
+    GtkWidget **entries = (GtkWidget **)g_malloc(7 * sizeof(GtkWidget *));
+    
+    // Label styling (same as register)
+    const gchar *label_css = "label { font-size: 14px; color: #2C3E50; font-weight: 600; }";
+    GtkCssProvider *label_provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(label_provider, label_css, -1, NULL);
+    
+    // Get current account data for preload
+    Date birthday = getAccountBirthday(currentAccount);
+    gchar *birthday_str = g_strdup_printf("%02d/%02d/%04d", birthday.day, birthday.month, birthday.year);
+    gchar *full_name = g_strdup_printf("%s %s", getAccountFirstName(currentAccount), getAccountSecondName(currentAccount));
+    const char *phone = getAccountPhoneNumber(currentAccount);
+    const char *account_type = NULL;
+    if (getAccountUserAccountsNumber(currentAccount) > 0 && currentAccount->userAccounts[0] != NULL) {
+        account_type = getUserAccountType(currentAccount->userAccounts[0]);
+    }
+    
+    // 1. Current Password field
+    GtkWidget *current_password_label = gtk_label_new("Current Password:");
+    GtkStyleContext *label_context1 = gtk_widget_get_style_context(current_password_label);
+    gtk_style_context_add_provider(label_context1, GTK_STYLE_PROVIDER(label_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    gtk_widget_set_halign(current_password_label, GTK_ALIGN_START);
+    gtk_widget_set_margin_bottom(current_password_label, 2);
+    gtk_box_pack_start(GTK_BOX(form_card), current_password_label, FALSE, FALSE, 0);
+    
     entries[0] = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[0]), "Enter the password");
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[0]), 50);
-    gtk_grid_attach(GTK_GRID(grid), entries[0], 1, 0, 1, 1);
-
-    GtkWidget *password_label = gtk_label_new("                        New Password:");
-    gtk_label_set_attributes(GTK_LABEL(password_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), password_label, 0, 1, 1, 1);
-
+    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[0]), "Enter current password");
+    gtk_entry_set_visibility(GTK_ENTRY(entries[0]), FALSE);
+    gtk_entry_set_invisible_char(GTK_ENTRY(entries[0]), '*');
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[0]), 30);
+    style_entry(entries[0]);
+    gtk_widget_set_margin_bottom(entries[0], 10);
+    gtk_box_pack_start(GTK_BOX(form_card), entries[0], FALSE, FALSE, 0);
+    
+    // 2. New Password field
+    GtkWidget *new_password_label = gtk_label_new("New Password:");
+    GtkCssProvider *label_provider2 = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(label_provider2, label_css, -1, NULL);
+    GtkStyleContext *label_context2 = gtk_widget_get_style_context(new_password_label);
+    gtk_style_context_add_provider(label_context2, GTK_STYLE_PROVIDER(label_provider2), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(label_provider2);
+    gtk_widget_set_halign(new_password_label, GTK_ALIGN_START);
+    gtk_widget_set_margin_bottom(new_password_label, 2);
+    gtk_box_pack_start(GTK_BOX(form_card), new_password_label, FALSE, FALSE, 0);
+    
     entries[1] = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[1]), "Enter new password");
+    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[1]), "Enter new password (optional)");
     gtk_entry_set_visibility(GTK_ENTRY(entries[1]), FALSE);
     gtk_entry_set_invisible_char(GTK_ENTRY(entries[1]), '*');
-    gtk_grid_attach(GTK_GRID(grid), entries[1], 1, 1, 1, 1);
-
-    GtkWidget *confirm_password_label = gtk_label_new("                    Confirm Password:");
-    gtk_label_set_attributes(GTK_LABEL(confirm_password_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), confirm_password_label, 0, 2, 1, 1);
-
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[1]), 30);
+    style_entry(entries[1]);
+    gtk_widget_set_margin_bottom(entries[1], 10);
+    gtk_box_pack_start(GTK_BOX(form_card), entries[1], FALSE, FALSE, 0);
+    
+    // 3. Confirm Password field
+    GtkWidget *confirm_password_label = gtk_label_new("Confirm Password:");
+    GtkCssProvider *label_provider3 = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(label_provider3, label_css, -1, NULL);
+    GtkStyleContext *label_context3 = gtk_widget_get_style_context(confirm_password_label);
+    gtk_style_context_add_provider(label_context3, GTK_STYLE_PROVIDER(label_provider3), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(label_provider3);
+    gtk_widget_set_halign(confirm_password_label, GTK_ALIGN_START);
+    gtk_widget_set_margin_bottom(confirm_password_label, 2);
+    gtk_box_pack_start(GTK_BOX(form_card), confirm_password_label, FALSE, FALSE, 0);
+    
     entries[2] = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[2]), "Repeat new password");
+    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[2]), "Repeat new password (optional)");
     gtk_entry_set_visibility(GTK_ENTRY(entries[2]), FALSE);
     gtk_entry_set_invisible_char(GTK_ENTRY(entries[2]), '*');
-    gtk_grid_attach(GTK_GRID(grid), entries[2], 1, 2, 1, 1);
-
-    GtkWidget *account_type_label = gtk_label_new("                    Account Type:");
-    gtk_label_set_attributes(GTK_LABEL(account_type_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), account_type_label, 0, 3, 1, 1);
-
-    entries[3] = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[3]), "Enter account type");
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[3]), 50);
-    gtk_grid_attach(GTK_GRID(grid),  entries[3], 1, 3, 1, 1);
-
-    GtkWidget *phone_number_label = gtk_label_new("                      Phone Number:");
-    gtk_label_set_attributes(GTK_LABEL(phone_number_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), phone_number_label, 0, 4, 1, 1);
-
-    entries[4] = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[4]), "Enter your phone number");
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[4]), 50);
-    gtk_grid_attach(GTK_GRID(grid), entries[4], 1, 4, 1, 1);
-
-    GtkWidget *first_name_label = gtk_label_new("                   First Name:");
-    gtk_label_set_attributes(GTK_LABEL(first_name_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), first_name_label, 2, 0, 1, 1);
-
-    entries[5] = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[5]), "Enter your first name");
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[5]), 50);
-    gtk_grid_attach(GTK_GRID(grid), entries[5], 3, 0, 1, 1);
-
-    GtkWidget *second_name_label = gtk_label_new("                  Second Name:");
-    gtk_label_set_attributes(GTK_LABEL(second_name_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), second_name_label, 2, 1, 1, 1);
-
-    entries[6] = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[6]), "Enter your second name");
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[6]), 50);
-    gtk_grid_attach(GTK_GRID(grid), entries[6], 3, 1, 1, 1);
-
-    GtkWidget *day_birthday_label = gtk_label_new("                   Birthday Day:");
-    gtk_label_set_attributes(GTK_LABEL(day_birthday_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), day_birthday_label, 2, 2, 1, 1);
-
-    entries[7] = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[7]), "Enter the day");
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[7]), 50);
-    gtk_grid_attach(GTK_GRID(grid), entries[7], 3, 2, 1, 1);
-
-    GtkWidget *month_birthday_label = gtk_label_new("                  Birthday Month:");
-    gtk_label_set_attributes(GTK_LABEL(month_birthday_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), month_birthday_label, 2, 3, 1, 1);
-
-    entries[8] = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[8]), "Enter the month");
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[8]), 50);
-    gtk_grid_attach(GTK_GRID(grid), entries[8], 3, 3, 1, 1);
-
-    GtkWidget *year_birthday_label = gtk_label_new("                  Birthday Year:");
-    gtk_label_set_attributes(GTK_LABEL(year_birthday_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), year_birthday_label, 2, 4, 1, 1);
-
-    entries[9] = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[9]), "Enter the year");
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[9]), 50);
-    gtk_grid_attach(GTK_GRID(grid), entries[9], 3, 4, 1, 1);
-
-    GtkWidget *save_changes = gtk_button_new_with_label("Save Changes");
-    GtkWidget *cancel = gtk_button_new_with_label("Cancel");
-
-    const char *css = "label { font-size: 45px; font-weight: 600; }";
-    GtkCssProvider *buttons_provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(buttons_provider, css, -1, NULL);
-    GtkWidget *buttons[] = {save_changes, cancel};
-    for (int i = 0; i < G_N_ELEMENTS(buttons); i++) {
-        GtkWidget *label = gtk_bin_get_child(GTK_BIN(buttons[i]));
-        gtk_style_context_add_provider(gtk_widget_get_style_context(label), GTK_STYLE_PROVIDER(buttons_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-        if (i == 0) {
-            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(edit_an_account), entries);
-        } else if (i == 1) {
-            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_account_interface), NULL);
-            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(close_window), edit_account_window);
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[2]), 30);
+    style_entry(entries[2]);
+    gtk_widget_set_margin_bottom(entries[2], 10);
+    gtk_box_pack_start(GTK_BOX(form_card), entries[2], FALSE, FALSE, 0);
+    
+    // 4. Account Type - Combobox (preload current type)
+    GtkWidget *account_type_label = gtk_label_new("Account Type:");
+    GtkCssProvider *label_provider4 = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(label_provider4, label_css, -1, NULL);
+    GtkStyleContext *label_context4 = gtk_widget_get_style_context(account_type_label);
+    gtk_style_context_add_provider(label_context4, GTK_STYLE_PROVIDER(label_provider4), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(label_provider4);
+    gtk_widget_set_halign(account_type_label, GTK_ALIGN_START);
+    gtk_widget_set_margin_bottom(account_type_label, 2);
+    gtk_box_pack_start(GTK_BOX(form_card), account_type_label, FALSE, FALSE, 0);
+    
+    entries[3] = gtk_combo_box_text_new();
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(entries[3]), "savings");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(entries[3]), "checking");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(entries[3]), "credit");
+    // Set active based on current account type
+    if (account_type != NULL) {
+        if (strcmp(account_type, "savings") == 0) {
+            gtk_combo_box_set_active(GTK_COMBO_BOX(entries[3]), 0);
+        } else if (strcmp(account_type, "checking") == 0) {
+            gtk_combo_box_set_active(GTK_COMBO_BOX(entries[3]), 1);
+        } else if (strcmp(account_type, "credit") == 0) {
+            gtk_combo_box_set_active(GTK_COMBO_BOX(entries[3]), 2);
+        } else {
+            gtk_combo_box_set_active(GTK_COMBO_BOX(entries[3]), 0);
         }
-        gtk_box_pack_start(GTK_BOX(lower_box), buttons[i], TRUE, TRUE, 0);
+    } else {
+        gtk_combo_box_set_active(GTK_COMBO_BOX(entries[3]), 0);
     }
-    g_object_unref(buttons_provider);
+    style_entry(entries[3]);
+    gtk_widget_set_margin_bottom(entries[3], 10);
+    gtk_box_pack_start(GTK_BOX(form_card), entries[3], FALSE, FALSE, 0);
+    
+    // 5. Phone Number (preload current)
+    GtkWidget *phone_number_label = gtk_label_new("Phone Number:");
+    GtkCssProvider *label_provider5 = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(label_provider5, label_css, -1, NULL);
+    GtkStyleContext *label_context5 = gtk_widget_get_style_context(phone_number_label);
+    gtk_style_context_add_provider(label_context5, GTK_STYLE_PROVIDER(label_provider5), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(label_provider5);
+    gtk_widget_set_halign(phone_number_label, GTK_ALIGN_START);
+    gtk_widget_set_margin_bottom(phone_number_label, 2);
+    gtk_box_pack_start(GTK_BOX(form_card), phone_number_label, FALSE, FALSE, 0);
+    
+    entries[4] = gtk_entry_new();
+    if (phone != NULL) {
+        gtk_entry_set_text(GTK_ENTRY(entries[4]), phone);
+    } else {
+        gtk_entry_set_placeholder_text(GTK_ENTRY(entries[4]), "Enter your phone number");
+    }
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[4]), 30);
+    style_entry(entries[4]);
+    gtk_widget_set_margin_bottom(entries[4], 10);
+    gtk_box_pack_start(GTK_BOX(form_card), entries[4], FALSE, FALSE, 0);
+    
+    // 6. Name field (preload current - combined First + Second Name)
+    GtkWidget *name_label = gtk_label_new("Name:");
+    GtkCssProvider *label_provider6 = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(label_provider6, label_css, -1, NULL);
+    GtkStyleContext *label_context6 = gtk_widget_get_style_context(name_label);
+    gtk_style_context_add_provider(label_context6, GTK_STYLE_PROVIDER(label_provider6), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(label_provider6);
+    gtk_widget_set_halign(name_label, GTK_ALIGN_START);
+    gtk_widget_set_margin_bottom(name_label, 2);
+    gtk_box_pack_start(GTK_BOX(form_card), name_label, FALSE, FALSE, 0);
+    
+    entries[5] = gtk_entry_new();
+    if (full_name != NULL) {
+        gtk_entry_set_text(GTK_ENTRY(entries[5]), full_name);
+    } else {
+        gtk_entry_set_placeholder_text(GTK_ENTRY(entries[5]), "Enter your full name");
+    }
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[5]), 30);
+    style_entry(entries[5]);
+    gtk_widget_set_margin_bottom(entries[5], 10);
+    gtk_box_pack_start(GTK_BOX(form_card), entries[5], FALSE, FALSE, 0);
+    
+    // 7. Birthday - Date Entry (preload current - DD/MM/YYYY format)
+    GtkWidget *birthday_label = gtk_label_new("Birthday:");
+    GtkCssProvider *label_provider7 = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(label_provider7, label_css, -1, NULL);
+    GtkStyleContext *label_context7 = gtk_widget_get_style_context(birthday_label);
+    gtk_style_context_add_provider(label_context7, GTK_STYLE_PROVIDER(label_provider7), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(label_provider7);
+    gtk_widget_set_halign(birthday_label, GTK_ALIGN_START);
+    gtk_widget_set_margin_bottom(birthday_label, 2);
+    gtk_box_pack_start(GTK_BOX(form_card), birthday_label, FALSE, FALSE, 0);
+    
+    entries[6] = gtk_entry_new();
+    if (birthday_str != NULL) {
+        gtk_entry_set_text(GTK_ENTRY(entries[6]), birthday_str);
+    } else {
+        gtk_entry_set_placeholder_text(GTK_ENTRY(entries[6]), "DD/MM/YYYY (e.g., 10/02/2025)");
+    }
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[6]), 30);
+    style_entry(entries[6]);
+    gtk_widget_set_margin_bottom(entries[6], 10);
+    gtk_box_pack_start(GTK_BOX(form_card), entries[6], FALSE, FALSE, 0);
+    
+    // Free temporary strings
+    g_free(birthday_str);
+    g_free(full_name);
+    g_object_unref(label_provider);
+    
+    // Buttons integrated in the form card
+    GtkWidget *save_changes_button = gtk_button_new_with_label("Save Changes");
+    GtkWidget *cancel_button = gtk_button_new_with_label("Cancel");
+    
+    // Style Save Changes button - Green
+    gtk_widget_set_margin_top(save_changes_button, 5);
+    gtk_widget_set_margin_bottom(save_changes_button, 5);
+    gtk_widget_set_halign(save_changes_button, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(save_changes_button, TRUE);
+    style_success_button(save_changes_button);
+    g_signal_connect(G_OBJECT(save_changes_button), "clicked", G_CALLBACK(edit_an_account), entries);
+    gtk_box_pack_start(GTK_BOX(form_card), save_changes_button, FALSE, FALSE, 0);
+    
+    // Style Cancel button - Red
+    gtk_widget_set_margin_top(cancel_button, 5);
+    gtk_widget_set_margin_bottom(cancel_button, 5);
+    gtk_widget_set_halign(cancel_button, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(cancel_button, TRUE);
+    style_danger_button(cancel_button);
+    g_signal_connect(G_OBJECT(cancel_button), "clicked", G_CALLBACK(show_account_interface), NULL);
+    g_signal_connect(G_OBJECT(cancel_button), "clicked", G_CALLBACK(close_window), edit_account_window);
+    gtk_box_pack_start(GTK_BOX(form_card), cancel_button, FALSE, FALSE, 0);
+    
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), main_box);
     gtk_widget_show_all(GTK_WIDGET(edit_account_window));
-    gtk_widget_destroy(data);
+    if (data != NULL)
+        gtk_widget_destroy(data);
 }
 
 // Create new window with all account options after the user is logged.
@@ -1463,48 +1578,70 @@ void show_account_interface() {
     GtkWidget *overlay_main_box = gtk_overlay_new();
     gtk_container_add(GTK_CONTAINER(your_account_window), overlay_main_box);
     GtkWidget *image_app_background = gtk_image_new_from_file("images/app_background.png");
+    gtk_widget_set_sensitive(image_app_background, FALSE);  // Allow clicks to pass through
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), image_app_background);
 
     GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_box_set_spacing(GTK_BOX(main_box), 50);
+    gtk_box_set_spacing(GTK_BOX(main_box), 0);
     gtk_container_set_border_width(GTK_CONTAINER(main_box), 50);
 
-    GtkWidget *upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-    gtk_widget_set_size_request(GTK_WIDGET(upper_box), -1, 320);
-    gtk_box_pack_start(GTK_BOX(main_box), upper_box, TRUE, TRUE, 0);
-
-    GtkWidget *overlay_upper_box = gtk_overlay_new();
-    gtk_box_pack_start(GTK_BOX(upper_box), overlay_upper_box, TRUE, TRUE, 0);
-    GtkWidget *image_background = gtk_image_new_from_file("images/main_background.jpg");
-    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), image_background);
-
-    GtkWidget *content_box_for_upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    // Spacer to push header to center
+    GtkWidget *spacer_top = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_sensitive(spacer_top, FALSE);
+    gtk_box_pack_start(GTK_BOX(main_box), spacer_top, TRUE, TRUE, 0);
+    
+    // Header box with logo, title and subtitle in column (centered like main menu)
+    GtkWidget *header_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_set_halign(header_box, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_top(header_box, 30);
+    gtk_widget_set_margin_bottom(header_box, 20);
+    
+    // Logo on top
     GtkWidget *image_logo = gtk_image_new_from_file("images/bank_logo.png");
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), image_logo, FALSE, FALSE, 50);
+    gtk_widget_set_halign(image_logo, GTK_ALIGN_CENTER);
+    gtk_box_pack_start(GTK_BOX(header_box), image_logo, FALSE, FALSE, 0);
 
-    GtkWidget *text_title = gtk_label_new("Your account");
-    style_title_label(text_title, "#FFDFAF");
-
-    gchar *text_for_subtitle;
+    // Title below logo - "Welcome [Name]"
+    gchar *title_text;
     if (currentAccount != NULL) {
-        text_for_subtitle = g_strdup_printf("Welcome %s!\nAccount balance: %.2f$", 
-            getAccountFirstName(currentAccount), getAccountBalance(currentAccount));
+        title_text = g_strdup_printf("Welcome %s", getAccountFirstName(currentAccount));
     } else {
-        text_for_subtitle = g_strdup("Welcome!\nAccount balance: 0.00$");
+        title_text = g_strdup("Welcome");
     }
-    GtkWidget *text_subtitle = gtk_label_new(NULL);
-    gtk_label_set_text(GTK_LABEL(text_subtitle), text_for_subtitle);
-    g_free(text_for_subtitle);
+    GtkWidget *text_title = gtk_label_new(title_text);
+    g_free(title_text);
+    style_title_label(text_title, "#FFDFAF");
+    gtk_widget_set_halign(text_title, GTK_ALIGN_CENTER);
+    gtk_box_pack_start(GTK_BOX(header_box), text_title, FALSE, FALSE, 10);
+
+    // Subtitle below title - Account balance
+    gchar *balance_text;
+    if (currentAccount != NULL) {
+        balance_text = g_strdup_printf("Account balance: %.2f$", getAccountBalance(currentAccount));
+    } else {
+        balance_text = g_strdup("Account balance: 0.00$");
+    }
+    GtkWidget *text_subtitle = gtk_label_new(balance_text);
+    g_free(balance_text);
     style_subtitle_label(text_subtitle, "#E7E7E7");
-
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_title, FALSE, FALSE, 10);
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_subtitle, FALSE, FALSE, 0);
-    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), content_box_for_upper_box);
-
-    GtkWidget *lower_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 20);
-    gtk_widget_set_size_request(GTK_WIDGET(lower_box), -1, 400);
-    gtk_box_pack_start(GTK_BOX(main_box), lower_box, TRUE, TRUE, 0);
-    gtk_container_set_border_width(GTK_CONTAINER(lower_box), 40);
+    gtk_widget_set_halign(text_subtitle, GTK_ALIGN_CENTER);
+    gtk_box_pack_start(GTK_BOX(header_box), text_subtitle, FALSE, FALSE, 0);
+    
+    gtk_box_pack_start(GTK_BOX(main_box), header_box, FALSE, FALSE, 0);
+    
+    // Spacer to push buttons to bottom
+    GtkWidget *spacer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_sensitive(spacer, FALSE);
+    gtk_box_pack_start(GTK_BOX(main_box), spacer, TRUE, TRUE, 0);
+    
+    // Group buttons at the bottom - match width with upper banner
+    GtkWidget *lower_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
+    gtk_widget_set_size_request(GTK_WIDGET(lower_box), -1, -1);
+    gtk_container_set_border_width(GTK_CONTAINER(lower_box), 50);  // Match main_box border
+    gtk_widget_set_halign(lower_box, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(lower_box, TRUE);  // Allow horizontal expansion
+    gtk_widget_set_vexpand(lower_box, FALSE);  // Don't expand vertically
+    gtk_box_pack_start(GTK_BOX(main_box), lower_box, FALSE, FALSE, 0);
 
     GtkWidget *new_transaction = gtk_button_new_with_label("New transaction");
     GtkWidget *transactions_button = gtk_button_new_with_label("Your transactions");
@@ -1517,12 +1654,14 @@ void show_account_interface() {
     for (int i = 0; i < G_N_ELEMENTS(buttons); i++) {
         gtk_widget_set_margin_top(buttons[i], 8);
         gtk_widget_set_margin_bottom(buttons[i], 8);
+        gtk_widget_set_halign(buttons[i], GTK_ALIGN_CENTER);
+        gtk_widget_set_hexpand(buttons[i], TRUE);  // Allow buttons to expand horizontally
         // Style buttons based on their function
         if (i == 0) {
             style_primary_button(buttons[i]);
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_new_transaction_interface), your_account_window);
         } else if (i == 1) {
-            style_success_button(buttons[i]);
+            style_success_button_main_menu(buttons[i]);  // Green with dark text for main menu
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_all_transactions_interface), your_account_window);
         } else if (i == 2) {
             style_secondary_button(buttons[i]);
@@ -1532,7 +1671,7 @@ void show_account_interface() {
             style_warning_button(buttons[i]);
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_edit_account_interface), your_account_window);
         } else if (i == 4) {
-            style_danger_button(buttons[i]);
+            style_danger_button_main_menu(buttons[i]);  // Red with dark text for main menu
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(delete_an_account), NULL);
             GtkWidget *main_window = g_object_get_data(G_OBJECT(app), "main_window");
             if (main_window != NULL) {
@@ -1550,6 +1689,7 @@ void show_account_interface() {
         }
         gtk_box_pack_start(GTK_BOX(lower_box), buttons[i], FALSE, FALSE, 0);
     }
+    // Add main_box to overlay AFTER image_app_background so it's on top and receives events
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), main_box);
     gtk_widget_show_all(GTK_WIDGET(your_account_window));
 }
