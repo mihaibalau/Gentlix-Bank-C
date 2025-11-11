@@ -1764,10 +1764,9 @@ void activate_main_menu(GtkApplication *newApp, gpointer data) {
 
     GtkWidget *overlay_main_box = gtk_overlay_new();
     gtk_container_add(GTK_CONTAINER(main_window), overlay_main_box);
-    // Temporarily removed background image to test click issue
-    // GtkWidget *image_app_background = gtk_image_new_from_file("images/app_background.png");
-    // gtk_widget_set_sensitive(image_app_background, FALSE);  // Allow clicks to pass through
-    // gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), image_app_background);
+    GtkWidget *image_app_background = gtk_image_new_from_file("images/app_background.png");
+    gtk_widget_set_sensitive(image_app_background, FALSE);  // Allow clicks to pass through
+    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), image_app_background);
 
     GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_box_set_spacing(GTK_BOX(main_box), 0);
@@ -1777,14 +1776,15 @@ void activate_main_menu(GtkApplication *newApp, gpointer data) {
     gtk_widget_set_size_request(GTK_WIDGET(upper_box), -1, 350);
     gtk_box_pack_start(GTK_BOX(main_box), upper_box, FALSE, FALSE, 0);
 
-    GtkWidget *overlay_upper_box = gtk_overlay_new();
-    gtk_box_pack_start(GTK_BOX(upper_box), overlay_upper_box, TRUE, TRUE, 0);
-    GtkWidget *image_background = gtk_image_new_from_file("images/main_background.jpg");
-    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), image_background);
+    // Temporarily removed banner background image to test click issue
+    // GtkWidget *overlay_upper_box = gtk_overlay_new();
+    // gtk_box_pack_start(GTK_BOX(upper_box), overlay_upper_box, TRUE, TRUE, 0);
+    // GtkWidget *image_background = gtk_image_new_from_file("images/main_background.jpg");
+    // gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), image_background);
 
     GtkWidget *content_box_for_upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     GtkWidget *image_logo = gtk_image_new_from_file("images/bank_logo.png");
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), image_logo, FALSE, FALSE, 40);
+    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), image_logo, FALSE, FALSE, 30);  // Reduced from 40 to 30
 
     GtkWidget *text_title = gtk_label_new("Gentlix Bank");
     style_title_label(text_title, "#FFDFAF");
@@ -1792,17 +1792,13 @@ void activate_main_menu(GtkApplication *newApp, gpointer data) {
     GtkWidget *text_subtitle = gtk_label_new("Welcome back!");
     style_subtitle_label(text_subtitle, "#E7E7E7");
 
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_title, FALSE, FALSE, 15);
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_subtitle, FALSE, FALSE, 5);
-    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), content_box_for_upper_box);
+    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_title, FALSE, FALSE, 10);  // Reduced from 15 to 10
+    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_subtitle, FALSE, FALSE, 0);  // Reduced from 5 to 0
+    // Temporarily removed overlay - add content directly to upper_box
+    // gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), content_box_for_upper_box);
+    gtk_box_pack_start(GTK_BOX(upper_box), content_box_for_upper_box, TRUE, TRUE, 0);
 
-    // Add "Gentlix Bank" text below the banner
-    GtkWidget *bank_text = gtk_label_new("Gentlix Bank");
-    style_title_label(bank_text, "#2C3E50");
-    gtk_widget_set_margin_top(bank_text, 30);
-    gtk_widget_set_margin_bottom(bank_text, 20);
-    gtk_widget_set_halign(bank_text, GTK_ALIGN_CENTER);
-    gtk_box_pack_start(GTK_BOX(main_box), bank_text, FALSE, FALSE, 0);
+    // Removed second "Gentlix Bank" text below the banner
 
     // Spacer to push buttons to bottom - creates empty space in the middle
     GtkWidget *spacer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
@@ -1846,7 +1842,5 @@ void activate_main_menu(GtkApplication *newApp, gpointer data) {
     }
     // Add main_box to overlay AFTER image_app_background so it's on top and receives events
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), main_box);
-    // Ensure main_box receives events
-    gtk_widget_set_events(main_box, GDK_ALL_EVENTS_MASK);
     gtk_widget_show_all(main_window); // Show the main_window after all formats
 }
