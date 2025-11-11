@@ -1,5 +1,6 @@
 #include "gui.h"
 #include <gtk/gtk.h>
+#include <string.h>
 #include "../domain/domain.h"
 #include "../repository/repository.h"
 #include "../services/services.h"
@@ -622,34 +623,168 @@ void create_an_account(GtkWidget *widget, gpointer data){
 
     GtkWidget **entries = (GtkWidget **)data;
     
-    // Validate entries before accessing them
-    if (entries == NULL || entries[0] == NULL) {
+    // Validate entries array and all entries exist
+    if (entries == NULL) {
         show_error("Form entries not initialized!");
         return;
     }
     
-    const gchar *account_tag = gtk_entry_get_text(GTK_ENTRY(entries[0]));
-    const gchar *account_password = gtk_entry_get_text(GTK_ENTRY(entries[1]));
-    const gchar *account_password2 = gtk_entry_get_text(GTK_ENTRY(entries[2]));
-    const gchar *account_type = gtk_entry_get_text(GTK_ENTRY(entries[3]));
-    const gchar *user_phone_number = gtk_entry_get_text(GTK_ENTRY(entries[4]));
-    const gchar *user_first_name = gtk_entry_get_text(GTK_ENTRY(entries[5]));
-    const gchar *user_second_name = gtk_entry_get_text(GTK_ENTRY(entries[6]));
-    const gchar *user_birthday_day = gtk_entry_get_text(GTK_ENTRY(entries[7]));
-    const gchar *user_birthday_month = gtk_entry_get_text(GTK_ENTRY(entries[8]));
-    const gchar *user_birthday_year = gtk_entry_get_text(GTK_ENTRY(entries[9]));
-    g_free(entries);
-
+    // Check all entries exist and are valid widgets
+    for (int i = 0; i < 6; i++) {
+        if (entries[i] == NULL) {
+            show_error("One or more form fields are missing!");
+            return;
+        }
+    }
+    
+    // Validate app exists
     if (app == NULL) {
         show_error("Application not initialized!");
         return;
     }
 
+    // Get all field values with NULL checks
+    const gchar *account_tag = gtk_entry_get_text(GTK_ENTRY(entries[0]));
+    if (account_tag == NULL) account_tag = "";
+    
+    const gchar *full_name = gtk_entry_get_text(GTK_ENTRY(entries[1]));
+    if (full_name == NULL) full_name = "";
+    
+    const gchar *account_password = gtk_entry_get_text(GTK_ENTRY(entries[2]));
+    if (account_password == NULL) account_password = "";
+    
+    // Use password for password2 (confirm password) since we removed the confirm field
+    const gchar *account_password2 = account_password;
+    
+    // Get account type from combobox (must be freed)
+    gchar *account_type = NULL;
+    if (GTK_IS_COMBO_BOX(entries[3])) {
+        account_type = gtk_combo_box_text_get_active_text(GTK_COMBO_BOX_TEXT(entries[3]));
+        if (account_type == NULL) account_type = g_strdup("");
+    } else {
+        show_error("Account type selector is invalid!");
+        return;
+    }
+    
+    const gchar *user_phone_number = gtk_entry_get_text(GTK_ENTRY(entries[4]));
+    if (user_phone_number == NULL) user_phone_number = "";
+    
+    const gchar *birthday_str = gtk_entry_get_text(GTK_ENTRY(entries[5]));
+    if (birthday_str == NULL) birthday_str = "";
+    
+    // Validate account tag is not empty
+    if (strlen(account_tag) == 0) {
+        show_error("Account tag is required!");
+        g_free(account_type);
+        return;
+    }
+    
+    // Validate password is not empty
+    if (strlen(account_password) == 0) {
+        show_error("Password is required!");
+        g_free(account_type);
+        return;
+    }
+    
+    // Validate and parse full name - must have at least 2 words, each with minimum 3 characters
+    if (strlen(full_name) == 0) {
+        show_error("Name is required!");
+        g_free(account_type);
+        return;
+    }
+    
+    gchar **name_parts = g_strsplit(full_name, " ", 2);
+    if (name_parts == NULL || name_parts[0] == NULL) {
+        show_error("Invalid name format!");
+        g_free(account_type);
+        if (name_parts != NULL) g_strfreev(name_parts);
+        return;
+    }
+    
+    // Check first name has at least 3 characters
+    if (strlen(name_parts[0]) < 3) {
+        show_error("First name must be at least 3 characters long!");
+        g_free(account_type);
+        g_strfreev(name_parts);
+        return;
+    }
+    
+    // Check second name exists and has at least 3 characters
+    if (name_parts[1] == NULL || strlen(name_parts[1]) < 3) {
+        show_error("Name must contain at least 2 words separated by space, each with minimum 3 characters!");
+        g_free(account_type);
+        g_strfreev(name_parts);
+        return;
+    }
+    
+    const gchar *user_first_name = name_parts[0];
+    const gchar *user_second_name = name_parts[1];
+    
+    // Validate phone number is not empty
+    if (strlen(user_phone_number) == 0) {
+        show_error("Phone number is required!");
+        g_free(account_type);
+        g_strfreev(name_parts);
+        return;
+    }
+    
+    // Validate and parse date from DD/MM/YYYY format
+    if (strlen(birthday_str) == 0) {
+        show_error("Birthday is required! Please enter date in DD/MM/YYYY format (e.g., 10/02/2025)");
+        g_free(account_type);
+        g_strfreev(name_parts);
+        return;
+    }
+    
+    gchar **date_parts = g_strsplit(birthday_str, "/", 3);
+    if (date_parts == NULL || date_parts[0] == NULL || date_parts[1] == NULL || date_parts[2] == NULL) {
+        show_error("Invalid date format! Please use DD/MM/YYYY format (e.g., 10/02/2025)");
+        g_free(account_type);
+        g_strfreev(name_parts);
+        if (date_parts != NULL) g_strfreev(date_parts);
+        return;
+    }
+    
+    // Check all date parts are not empty
+    if (strlen(date_parts[0]) == 0 || strlen(date_parts[1]) == 0 || strlen(date_parts[2]) == 0) {
+        show_error("Invalid date format! Please use DD/MM/YYYY format (e.g., 10/02/2025)");
+        g_free(account_type);
+        g_strfreev(name_parts);
+        g_strfreev(date_parts);
+        return;
+    }
+    
+    const gchar *user_birthday_day = date_parts[0];
+    const gchar *user_birthday_month = date_parts[1];
+    const gchar *user_birthday_year = date_parts[2];
+    
+    // Validate account type is not empty
+    if (strlen(account_type) == 0) {
+        show_error("Account type is required!");
+        g_free(account_type);
+        g_strfreev(name_parts);
+        g_strfreev(date_parts);
+        return;
+    }
+
     RepositoryFormat* database = g_object_get_data(G_OBJECT(app), "database");
+    if (database == NULL) {
+        show_error("Database not initialized!");
+        g_free(account_type);
+        g_strfreev(name_parts);
+        g_strfreev(date_parts);
+        return;
+    }
+    
     Account* loggedAccount = NULL;
 
     int resultCode = createAccountService(database, account_tag, account_password, account_password2, account_type, user_phone_number, user_first_name, user_second_name,
                                   user_birthday_day, user_birthday_month, user_birthday_year, &loggedAccount);
+
+    // Free allocated strings
+    g_free(account_type);
+    g_strfreev(name_parts);
+    g_strfreev(date_parts);
 
     if(resultCode == 1 && loggedAccount != NULL) {
 
@@ -1589,43 +1724,47 @@ void show_register_interface(GtkWidget *widget, gpointer data) {
     gtk_box_set_spacing(GTK_BOX(main_box), 0);
     gtk_container_set_border_width(GTK_CONTAINER(main_box), 50);
 
-    // Header box with logo and title side by side
-    GtkWidget *header_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 20);
-    gtk_widget_set_halign(header_box, GTK_ALIGN_CENTER);
-    gtk_widget_set_margin_top(header_box, 50);
-    gtk_widget_set_margin_bottom(header_box, 30);
-    gtk_box_pack_start(GTK_BOX(main_box), header_box, FALSE, FALSE, 0);
-
-    // Logo on the left
-    GtkWidget *image_logo = gtk_image_new_from_file("images/bank_logo.png");
-    gtk_box_pack_start(GTK_BOX(header_box), image_logo, FALSE, FALSE, 0);
-
-    // Title and subtitle on the right
-    GtkWidget *title_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    GtkWidget *text_title = gtk_label_new("Register");
-    style_title_label(text_title, "#FFDFAF");
-    GtkWidget *text_subtitle = gtk_label_new("Create a new account!");
-    style_subtitle_label(text_subtitle, "#E7E7E7");
-    gtk_box_pack_start(GTK_BOX(title_box), text_title, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(title_box), text_subtitle, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(header_box), title_box, FALSE, FALSE, 0);
-
-    // Spacer to push form card to center
+    // Spacer to push header to center
     GtkWidget *spacer_top = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_sensitive(spacer_top, FALSE);
     gtk_box_pack_start(GTK_BOX(main_box), spacer_top, TRUE, TRUE, 0);
     
-    // Form card container for register (larger card for many fields)
-    GtkWidget *form_card = gtk_box_new(GTK_ORIENTATION_VERTICAL, 20);
+    // Header box with logo and title side by side (centered like login)
+    GtkWidget *header_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 20);
+    gtk_widget_set_halign(header_box, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_top(header_box, 30);
+    gtk_widget_set_margin_bottom(header_box, 20);
+    
+    // Logo on the left
+    GtkWidget *image_logo = gtk_image_new_from_file("images/bank_logo.png");
+    gtk_box_pack_start(GTK_BOX(header_box), image_logo, FALSE, FALSE, 0);
+
+    // Title on the right (centered vertically with logo)
+    GtkWidget *text_title = gtk_label_new("Register");
+    style_title_label(text_title, "#FFDFAF");
+    gtk_widget_set_valign(text_title, GTK_ALIGN_CENTER);
+    gtk_box_pack_start(GTK_BOX(header_box), text_title, FALSE, FALSE, 0);
+    
+    gtk_box_pack_start(GTK_BOX(main_box), header_box, FALSE, FALSE, 0);
+    
+    // Small spacer between header and form card
+    GtkWidget *card_spacer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_size_request(card_spacer, -1, 20);
+    gtk_widget_set_sensitive(card_spacer, FALSE);
+    gtk_box_pack_start(GTK_BOX(main_box), card_spacer, FALSE, FALSE, 0);
+
+    // Form card container (same size as login, reduced padding for space)
+    GtkWidget *form_card = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
     gtk_widget_set_halign(form_card, GTK_ALIGN_CENTER);
-    gtk_widget_set_size_request(form_card, 1000, -1);
+    gtk_widget_set_size_request(form_card, 500, -1);
     gtk_container_set_border_width(GTK_CONTAINER(form_card), 30);
     
-    // Style the card with background
+    // Style the form card with background and yellow border
     const gchar *card_css = 
         "box { "
         "background-color: #FFFFFF; "
         "border-radius: 12px; "
+        "border: 3px solid #FFD700; "
         "padding: 30px; "
         "}";
     GtkCssProvider *card_provider = gtk_css_provider_new();
@@ -1635,155 +1774,153 @@ void show_register_interface(GtkWidget *widget, gpointer data) {
     g_object_unref(card_provider);
     
     gtk_box_pack_start(GTK_BOX(main_box), form_card, FALSE, FALSE, 0);
-
-    GtkWidget *grid = gtk_grid_new(); // Used to make a table with input fields
-    gtk_widget_set_size_request(grid, -1, -1);
-    gtk_grid_set_row_spacing(GTK_GRID(grid), 20);
-    gtk_grid_set_column_spacing(GTK_GRID(grid), 20);
-    gtk_box_pack_start(GTK_BOX(form_card), grid, FALSE, FALSE, 0);
     
-    // Spacer to push buttons down
+    // Spacer to push buttons to bottom
     GtkWidget *spacer_bottom = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     gtk_widget_set_sensitive(spacer_bottom, FALSE);
     gtk_box_pack_start(GTK_BOX(main_box), spacer_bottom, TRUE, TRUE, 0);
+
+    // Allocate entries array: 0=usertag, 1=name, 2=password, 3=account_type, 4=phone, 5=birthday
+    GtkWidget **entries = (GtkWidget **)g_malloc(6 * sizeof(GtkWidget *));
     
-    // Buttons container
-    GtkWidget *lower_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
-    gtk_widget_set_size_request(GTK_WIDGET(lower_box), -1, -1);
-    gtk_container_set_border_width(GTK_CONTAINER(lower_box), 50);
-    gtk_widget_set_halign(lower_box, GTK_ALIGN_CENTER);
-    gtk_widget_set_hexpand(lower_box, TRUE);
-    gtk_box_pack_start(GTK_BOX(main_box), lower_box, FALSE, FALSE, 0);
-
-    GtkWidget **entries = (GtkWidget **)g_malloc(11 * sizeof(GtkWidget *)); // Dynamic allocation for inputs
-
-    // Create a list of formats for the text in front of input field
-    PangoAttrList *attr_list_text = pango_attr_list_new();
-    PangoAttribute *attr_size_text = pango_attr_size_new(35 * PANGO_SCALE);
-    pango_attr_list_insert(attr_list_text, attr_size_text);
-    PangoAttribute *attr_bold_text = pango_attr_weight_new(PANGO_WEIGHT_SEMIBOLD);
-    pango_attr_list_insert(attr_list_text, attr_bold_text);
-
-    // Create a list of formats for the text from input field
-    PangoAttrList *attr_list_entry = pango_attr_list_new();
-    PangoAttribute *attr_size_entry = pango_attr_size_new(25 * PANGO_SCALE);
-    pango_attr_list_insert(attr_list_entry, attr_size_entry);
-
-    // Because gtk don't have a feature which can center the grid inside the box
-    // on windows 11 I used spaces for that
-    GtkWidget *username_label = gtk_label_new("                        Usertag:");
-    gtk_label_set_attributes(GTK_LABEL(username_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), username_label, 0, 0, 1, 1);
-
+    // Label styling (smaller for space)
+    const gchar *label_css = "label { font-size: 14px; color: #2C3E50; font-weight: 600; }";
+    GtkCssProvider *label_provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(label_provider, label_css, -1, NULL);
+    
+    // 1. Usertag field
+    GtkWidget *username_label = gtk_label_new("Usertag:");
+    GtkStyleContext *label_context = gtk_widget_get_style_context(username_label);
+    gtk_style_context_add_provider(label_context, GTK_STYLE_PROVIDER(label_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    gtk_widget_set_halign(username_label, GTK_ALIGN_START);
+    gtk_widget_set_margin_bottom(username_label, 2);
+    gtk_box_pack_start(GTK_BOX(form_card), username_label, FALSE, FALSE, 0);
+    
     entries[0] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[0]), "Enter an account tag");
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[0]), 50);
-    gtk_grid_attach(GTK_GRID(grid), entries[0], 1, 0, 1, 1);
-
-    GtkWidget *password_label = gtk_label_new("                        Password:");
-    gtk_label_set_attributes(GTK_LABEL(password_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), password_label, 0, 1, 1, 1);
-
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[0]), 30);
+    style_entry(entries[0]);
+    gtk_widget_set_margin_bottom(entries[0], 10);
+    gtk_box_pack_start(GTK_BOX(form_card), entries[0], FALSE, FALSE, 0);
+    
+    // 2. Name field (combined First + Second Name)
+    GtkWidget *name_label = gtk_label_new("Name:");
+    GtkCssProvider *label_provider2 = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(label_provider2, label_css, -1, NULL);
+    GtkStyleContext *label_context2 = gtk_widget_get_style_context(name_label);
+    gtk_style_context_add_provider(label_context2, GTK_STYLE_PROVIDER(label_provider2), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(label_provider2);
+    gtk_widget_set_halign(name_label, GTK_ALIGN_START);
+    gtk_widget_set_margin_bottom(name_label, 2);
+    gtk_box_pack_start(GTK_BOX(form_card), name_label, FALSE, FALSE, 0);
+    
     entries[1] = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[1]), "Enter account password");
-    gtk_entry_set_visibility(GTK_ENTRY(entries[1]), FALSE);
-    gtk_entry_set_invisible_char(GTK_ENTRY(entries[1]), '*');
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[1]), 50);
-    gtk_grid_attach(GTK_GRID(grid), entries[1], 1, 1, 1, 1);
-
-    GtkWidget *confirm_password_label = gtk_label_new("                    Confirm Password:");
-    gtk_label_set_attributes(GTK_LABEL(confirm_password_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), confirm_password_label, 0, 2, 1, 1);
-
+    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[1]), "Enter your full name");
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[1]), 30);
+    style_entry(entries[1]);
+    gtk_widget_set_margin_bottom(entries[1], 10);
+    gtk_box_pack_start(GTK_BOX(form_card), entries[1], FALSE, FALSE, 0);
+    
+    // 3. Password field
+    GtkWidget *password_label = gtk_label_new("Password:");
+    GtkCssProvider *label_provider3 = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(label_provider3, label_css, -1, NULL);
+    GtkStyleContext *label_context3 = gtk_widget_get_style_context(password_label);
+    gtk_style_context_add_provider(label_context3, GTK_STYLE_PROVIDER(label_provider3), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(label_provider3);
+    gtk_widget_set_halign(password_label, GTK_ALIGN_START);
+    gtk_widget_set_margin_bottom(password_label, 2);
+    gtk_box_pack_start(GTK_BOX(form_card), password_label, FALSE, FALSE, 0);
+    
     entries[2] = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[2]), "Repeat account password");
+    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[2]), "Enter account password");
     gtk_entry_set_visibility(GTK_ENTRY(entries[2]), FALSE);
     gtk_entry_set_invisible_char(GTK_ENTRY(entries[2]), '*');
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[2]), 50);
-    gtk_grid_attach(GTK_GRID(grid), entries[2], 1, 2, 1, 1);
-
-    GtkWidget *account_type_label = gtk_label_new("                    Account Type:");
-    gtk_label_set_attributes(GTK_LABEL(account_type_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), account_type_label, 0, 3, 1, 1);
-
-    entries[3] = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[3]), "Enter account type");
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[3]), 50);
-    gtk_grid_attach(GTK_GRID(grid),  entries[3], 1, 3, 1, 1);
-
-    GtkWidget *phone_number_label = gtk_label_new("                      Phone Number:");
-    gtk_label_set_attributes(GTK_LABEL(phone_number_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), phone_number_label, 0, 4, 1, 1);
-
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[2]), 30);
+    style_entry(entries[2]);
+    gtk_widget_set_margin_bottom(entries[2], 10);
+    gtk_box_pack_start(GTK_BOX(form_card), entries[2], FALSE, FALSE, 0);
+    
+    // 4. Account Type - Combobox
+    GtkWidget *account_type_label = gtk_label_new("Account Type:");
+    GtkCssProvider *label_provider4 = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(label_provider4, label_css, -1, NULL);
+    GtkStyleContext *label_context4 = gtk_widget_get_style_context(account_type_label);
+    gtk_style_context_add_provider(label_context4, GTK_STYLE_PROVIDER(label_provider4), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(label_provider4);
+    gtk_widget_set_halign(account_type_label, GTK_ALIGN_START);
+    gtk_widget_set_margin_bottom(account_type_label, 2);
+    gtk_box_pack_start(GTK_BOX(form_card), account_type_label, FALSE, FALSE, 0);
+    
+    entries[3] = gtk_combo_box_text_new();
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(entries[3]), "savings");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(entries[3]), "checking");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(entries[3]), "credit");
+    gtk_combo_box_set_active(GTK_COMBO_BOX(entries[3]), 0);  // Default to first option
+    style_entry(entries[3]);
+    gtk_widget_set_margin_bottom(entries[3], 10);
+    gtk_box_pack_start(GTK_BOX(form_card), entries[3], FALSE, FALSE, 0);
+    
+    // 5. Phone Number
+    GtkWidget *phone_number_label = gtk_label_new("Phone Number:");
+    GtkCssProvider *label_provider5 = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(label_provider5, label_css, -1, NULL);
+    GtkStyleContext *label_context5 = gtk_widget_get_style_context(phone_number_label);
+    gtk_style_context_add_provider(label_context5, GTK_STYLE_PROVIDER(label_provider5), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(label_provider5);
+    gtk_widget_set_halign(phone_number_label, GTK_ALIGN_START);
+    gtk_widget_set_margin_bottom(phone_number_label, 2);
+    gtk_box_pack_start(GTK_BOX(form_card), phone_number_label, FALSE, FALSE, 0);
+    
     entries[4] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[4]), "Enter your phone number");
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[4]), 50);
-    gtk_grid_attach(GTK_GRID(grid), entries[4], 1, 4, 1, 1);
-
-    GtkWidget *first_name_label = gtk_label_new("                   First Name:");
-    gtk_label_set_attributes(GTK_LABEL(first_name_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), first_name_label, 2, 0, 1, 1);
-
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[4]), 30);
+    style_entry(entries[4]);
+    gtk_widget_set_margin_bottom(entries[4], 10);
+    gtk_box_pack_start(GTK_BOX(form_card), entries[4], FALSE, FALSE, 0);
+    
+    // 6. Birthday - Date Entry (DD/MM/YYYY format)
+    GtkWidget *birthday_label = gtk_label_new("Birthday:");
+    GtkCssProvider *label_provider6 = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(label_provider6, label_css, -1, NULL);
+    GtkStyleContext *label_context6 = gtk_widget_get_style_context(birthday_label);
+    gtk_style_context_add_provider(label_context6, GTK_STYLE_PROVIDER(label_provider6), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(label_provider6);
+    gtk_widget_set_halign(birthday_label, GTK_ALIGN_START);
+    gtk_widget_set_margin_bottom(birthday_label, 2);
+    gtk_box_pack_start(GTK_BOX(form_card), birthday_label, FALSE, FALSE, 0);
+    
     entries[5] = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[5]), "Enter your first name");
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[5]), 50);
-    gtk_grid_attach(GTK_GRID(grid), entries[5], 3, 0, 1, 1);
-
-    GtkWidget *second_name_label = gtk_label_new("                  Second Name:");
-    gtk_label_set_attributes(GTK_LABEL(second_name_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), second_name_label, 2, 1, 1, 1);
-
-    entries[6] = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[6]), "Enter your second name");
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[6]), 50);
-    gtk_grid_attach(GTK_GRID(grid), entries[6], 3, 1, 1, 1);
-
-    GtkWidget *day_birthday_label = gtk_label_new("                   Birthday Day:");
-    gtk_label_set_attributes(GTK_LABEL(day_birthday_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), day_birthday_label, 2, 2, 1, 1);
-
-    entries[7] = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[7]), "Enter the day");
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[7]), 50);
-    gtk_grid_attach(GTK_GRID(grid), entries[7], 3, 2, 1, 1);
-
-    GtkWidget *month_birthday_label = gtk_label_new("                  Birthday Month:");
-    gtk_label_set_attributes(GTK_LABEL(month_birthday_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), month_birthday_label, 2, 3, 1, 1);
-
-    entries[8] = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[8]), "Enter the month");
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[8]), 50);
-    gtk_grid_attach(GTK_GRID(grid), entries[8], 3, 3, 1, 1);
-
-    GtkWidget *year_birthday_label = gtk_label_new("                  Birthday Year:");
-    gtk_label_set_attributes(GTK_LABEL(year_birthday_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), year_birthday_label, 2, 4, 1, 1);
-
-    entries[9] = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[9]), "Enter the year");
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[9]), 50);
-    gtk_grid_attach(GTK_GRID(grid), entries[9], 3, 4, 1, 1);
-
+    gtk_entry_set_placeholder_text(GTK_ENTRY(entries[5]), "DD/MM/YYYY (e.g., 10/02/2025)");
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[5]), 30);
+    style_entry(entries[5]);
+    gtk_widget_set_margin_bottom(entries[5], 10);
+    gtk_box_pack_start(GTK_BOX(form_card), entries[5], FALSE, FALSE, 0);
+    
+    // Buttons integrated in the form card
     GtkWidget *create_account_button = gtk_button_new_with_label("Create account");
     GtkWidget *close_button = gtk_button_new_with_label("Close");
-
-    GtkWidget *buttons[] = {create_account_button, close_button};
-    for (int i = 0; i < G_N_ELEMENTS(buttons); i++) {
-        gtk_widget_set_margin_top(buttons[i], 8);
-        gtk_widget_set_margin_bottom(buttons[i], 8);
-        gtk_widget_set_halign(buttons[i], GTK_ALIGN_CENTER);
-        gtk_widget_set_hexpand(buttons[i], TRUE);
-        if (i == 0) {
-            style_success_button(buttons[i]);
-            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(create_an_account), entries);
-        } else if (i == 1) {
-            style_danger_button(buttons[i]);
-            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_window), data);
-            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(close_window), register_window);
-        }
-        gtk_box_pack_start(GTK_BOX(lower_box), buttons[i], FALSE, FALSE, 0);
-    }
+    
+    // Style Create account button - Green
+    gtk_widget_set_margin_top(create_account_button, 5);
+    gtk_widget_set_margin_bottom(create_account_button, 5);
+    gtk_widget_set_halign(create_account_button, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(create_account_button, TRUE);
+    style_success_button(create_account_button);
+    g_signal_connect(G_OBJECT(create_account_button), "clicked", G_CALLBACK(create_an_account), entries);
+    gtk_box_pack_start(GTK_BOX(form_card), create_account_button, FALSE, FALSE, 0);
+    
+    // Style Close button - Red
+    gtk_widget_set_margin_top(close_button, 5);
+    gtk_widget_set_margin_bottom(close_button, 5);
+    gtk_widget_set_halign(close_button, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(close_button, TRUE);
+    style_danger_button(close_button);
+    g_signal_connect(G_OBJECT(close_button), "clicked", G_CALLBACK(show_window), data);
+    g_signal_connect(G_OBJECT(close_button), "clicked", G_CALLBACK(close_window), register_window);
+    gtk_box_pack_start(GTK_BOX(form_card), close_button, FALSE, FALSE, 0);
+    
+    g_object_unref(label_provider);
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), main_box);
     gtk_widget_show_all(GTK_WIDGET(register_window));
     gtk_widget_hide(data); // Hide main menu to be able to show it anytime
