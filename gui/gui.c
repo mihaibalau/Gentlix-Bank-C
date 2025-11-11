@@ -61,14 +61,16 @@ void style_primary_button(GtkWidget *button) {
     style_button(button, "#4A90E2", "#357ABD", "#1A1A1A");
 }
 
-// Helper function to style success buttons (green)
+// Helper function to style success buttons (green) - for login forms
 void style_success_button(GtkWidget *button) {
-    style_button(button, "#2ECC71", "#27AE60", "#1A1A1A");
+    // Use green background with black text for better readability
+    style_button(button, "#2ECC71", "#27AE60", "#000000");  // Green with black text
 }
 
-// Helper function to style danger buttons (red)
+// Helper function to style danger buttons (red) - for login forms
 void style_danger_button(GtkWidget *button) {
-    style_button(button, "#E74C3C", "#C0392B", "#1A1A1A");
+    // Use red background with black text for better readability
+    style_button(button, "#E74C3C", "#C0392B", "#000000");  // Red with black text
 }
 
 // Helper function to style warning buttons (orange)
@@ -79,6 +81,16 @@ void style_warning_button(GtkWidget *button) {
 // Helper function to style secondary buttons (gray)
 void style_secondary_button(GtkWidget *button) {
     style_button(button, "#95A5A6", "#7F8C8D", "#1A1A1A");
+}
+
+// Helper function to style success buttons for main menu (green background, dark text)
+void style_success_button_main_menu(GtkWidget *button) {
+    style_button(button, "#2ECC71", "#27AE60", "#1A1A1A");  // Green with dark text for main menu
+}
+
+// Helper function to style danger buttons for main menu (red background, dark text)
+void style_danger_button_main_menu(GtkWidget *button) {
+    style_button(button, "#E74C3C", "#C0392B", "#1A1A1A");  // Red with dark text for main menu
 }
 
 // Helper function to style title labels
@@ -1423,118 +1435,132 @@ void show_login_interface(GtkWidget *widget, gpointer data) {
     GtkWidget *overlay_main_box = gtk_overlay_new();
     gtk_container_add(GTK_CONTAINER(login_window), overlay_main_box);
     GtkWidget *image_app_background = gtk_image_new_from_file("images/app_background.png");
+    gtk_widget_set_sensitive(image_app_background, FALSE);  // Allow clicks to pass through
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), image_app_background);
 
     GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_box_set_spacing(GTK_BOX(main_box), 50);
+    gtk_box_set_spacing(GTK_BOX(main_box), 0);
     gtk_container_set_border_width(GTK_CONTAINER(main_box), 50);
 
-    GtkWidget *upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-    gtk_widget_set_size_request(GTK_WIDGET(upper_box), -1, 320);
-    gtk_box_pack_start(GTK_BOX(main_box), upper_box, TRUE, TRUE, 0);
-
-    GtkWidget *overlay_upper_box = gtk_overlay_new();
-    gtk_box_pack_start(GTK_BOX(upper_box), overlay_upper_box, TRUE, TRUE, 0);
-    GtkWidget *image_background = gtk_image_new_from_file("images/main_background.jpg");
-    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), image_background);
-
-    GtkWidget *content_box_for_upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    // Spacer to push header to center
+    GtkWidget *spacer_top = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_sensitive(spacer_top, FALSE);
+    gtk_box_pack_start(GTK_BOX(main_box), spacer_top, TRUE, TRUE, 0);
+    
+    // Header box with logo and title side by side (no card)
+    GtkWidget *header_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 20);
+    gtk_widget_set_halign(header_box, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_top(header_box, 30);
+    gtk_widget_set_margin_bottom(header_box, 20);
+    
+    // Logo on the left
     GtkWidget *image_logo = gtk_image_new_from_file("images/bank_logo.png");
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), image_logo, FALSE, FALSE, 50);
+    gtk_box_pack_start(GTK_BOX(header_box), image_logo, FALSE, FALSE, 0);
 
+    // Title on the right (centered vertically with logo)
     GtkWidget *text_title = gtk_label_new("Login");
     style_title_label(text_title, "#FFDFAF");
+    gtk_widget_set_valign(text_title, GTK_ALIGN_CENTER);
+    gtk_box_pack_start(GTK_BOX(header_box), text_title, FALSE, FALSE, 0);
+    
+    gtk_box_pack_start(GTK_BOX(main_box), header_box, FALSE, FALSE, 0);
+    
+    // Small spacer between header and form card
+    GtkWidget *card_spacer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_size_request(card_spacer, -1, 20);
+    gtk_widget_set_sensitive(card_spacer, FALSE);
+    gtk_box_pack_start(GTK_BOX(main_box), card_spacer, FALSE, FALSE, 0);
+    
+    // Form card container
+    GtkWidget *form_card = gtk_box_new(GTK_ORIENTATION_VERTICAL, 20);
+    gtk_widget_set_halign(form_card, GTK_ALIGN_CENTER);
+    gtk_widget_set_size_request(form_card, 500, -1);
+    gtk_container_set_border_width(GTK_CONTAINER(form_card), 40);
+    
+    // Style the form card with background and yellow border
+    const gchar *card_css = 
+        "box { "
+        "background-color: #FFFFFF; "
+        "border-radius: 12px; "
+        "border: 3px solid #FFD700; "
+        "padding: 30px; "
+        "}";
+    GtkCssProvider *card_provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(card_provider, card_css, -1, NULL);
+    GtkStyleContext *card_context = gtk_widget_get_style_context(form_card);
+    gtk_style_context_add_provider(card_context, GTK_STYLE_PROVIDER(card_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(card_provider);
+    
+    gtk_box_pack_start(GTK_BOX(main_box), form_card, FALSE, FALSE, 0);
 
-    GtkWidget *text_subtitle = gtk_label_new("Enter your account!");
-    style_subtitle_label(text_subtitle, "#E7E7E7");
+    GtkWidget **entries = (GtkWidget **)g_malloc(3 * sizeof(GtkWidget *));
 
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_title, FALSE, FALSE, 10);
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_subtitle, FALSE, FALSE, 0);
-    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), content_box_for_upper_box);
-
-    GtkWidget *lower_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 30);
-    gtk_widget_set_size_request(GTK_WIDGET(lower_box), -1, 400);
-    gtk_box_pack_start(GTK_BOX(main_box), lower_box, TRUE, TRUE, 0);
-    gtk_container_set_border_width(GTK_CONTAINER(lower_box), 40);
-
-    GtkWidget *grid = gtk_grid_new();
-    gtk_widget_set_size_request(grid, 100, -1);
-    gtk_grid_set_row_spacing(GTK_GRID(grid), 25);
-    gtk_grid_set_column_spacing(GTK_GRID(grid), 30);
-    gtk_grid_set_row_homogeneous(GTK_GRID(grid), FALSE);
-    gtk_grid_set_column_homogeneous(GTK_GRID(grid), FALSE);
-    gtk_box_pack_start(GTK_BOX(lower_box), grid, FALSE, FALSE, 30);
-
-    GtkWidget **entries = (GtkWidget **)g_malloc(3 * sizeof(GtkWidget *)); // Dynamic allocation for inputs
-
-    // Create a list of formats for the text in front of input field
-    PangoAttrList *attr_list_text = pango_attr_list_new();
-    PangoAttribute *attr_size_text = pango_attr_size_new(35 * PANGO_SCALE);
-    pango_attr_list_insert(attr_list_text, attr_size_text);
-    PangoAttribute *attr_bold_text = pango_attr_weight_new(PANGO_WEIGHT_SEMIBOLD);
-    pango_attr_list_insert(attr_list_text, attr_bold_text);
-
-    // Create a list of formats for the text from input field
-    PangoAttrList *attr_list_entry = pango_attr_list_new();
-    PangoAttribute *attr_size_entry = pango_attr_size_new(25 * PANGO_SCALE);
-    pango_attr_list_insert(attr_list_entry, attr_size_entry);
-
-    GtkWidget *username_label = gtk_label_new("                            Usertag:");
-    gtk_label_set_attributes(GTK_LABEL(username_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), username_label, 0, 0, 1, 1);
+    // Usertag field
+    GtkWidget *username_label = gtk_label_new("Usertag:");
+    const gchar *label_css = "label { font-size: 16px; color: #2C3E50; font-weight: 600; }";
+    GtkCssProvider *label_provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(label_provider, label_css, -1, NULL);
+    GtkStyleContext *label_context = gtk_widget_get_style_context(username_label);
+    gtk_style_context_add_provider(label_context, GTK_STYLE_PROVIDER(label_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(label_provider);
+    gtk_widget_set_halign(username_label, GTK_ALIGN_START);
+    gtk_widget_set_margin_bottom(username_label, 2);  // Even closer to input field
+    gtk_box_pack_start(GTK_BOX(form_card), username_label, FALSE, FALSE, 0);
 
     entries[0] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[0]), "Enter your account tag");
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[0]), 50);
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[0]), 30);
     style_entry(entries[0]);
-    gtk_widget_set_margin_start(entries[0], 15);
-    gtk_widget_set_margin_end(entries[0], 15);
-    gtk_grid_attach(GTK_GRID(grid), entries[0], 1, 0, 1, 1);
+    gtk_widget_set_margin_bottom(entries[0], 20);
+    gtk_box_pack_start(GTK_BOX(form_card), entries[0], FALSE, FALSE, 0);
 
-    GtkWidget *password_label = gtk_label_new("                          Password:");
-    gtk_label_set_attributes(GTK_LABEL(password_label), attr_list_text);
-    gtk_grid_attach(GTK_GRID(grid), password_label, 2, 0, 1, 1);
+    // Password field
+    GtkWidget *password_label = gtk_label_new("Password:");
+    GtkCssProvider *label_provider2 = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(label_provider2, label_css, -1, NULL);
+    GtkStyleContext *label_context2 = gtk_widget_get_style_context(password_label);
+    gtk_style_context_add_provider(label_context2, GTK_STYLE_PROVIDER(label_provider2), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(label_provider2);
+    gtk_widget_set_halign(password_label, GTK_ALIGN_START);
+    gtk_widget_set_margin_bottom(password_label, 2);  // Even closer to input field
+    gtk_box_pack_start(GTK_BOX(form_card), password_label, FALSE, FALSE, 0);
 
     entries[1] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[1]), "Enter account password");
     gtk_entry_set_visibility(GTK_ENTRY(entries[1]), FALSE);
     gtk_entry_set_invisible_char(GTK_ENTRY(entries[1]), '*');
-    gtk_entry_set_width_chars(GTK_ENTRY(entries[1]), 50);
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[1]), 30);
     style_entry(entries[1]);
-    gtk_widget_set_margin_start(entries[1], 15);
-    gtk_widget_set_margin_end(entries[1], 15);
-    gtk_grid_attach(GTK_GRID(grid), entries[1], 3, 0, 1, 1);
-
-    GtkWidget *blank_label = gtk_label_new(" \n");
-    gtk_label_set_attributes(GTK_LABEL(blank_label), attr_list_text);
-
-    GtkWidget *blank_label2 = gtk_label_new(" \n");
-    gtk_label_set_attributes(GTK_LABEL(blank_label), attr_list_text);
-
-    GtkWidget *blank_label3 = gtk_label_new(" \n");
-    gtk_label_set_attributes(GTK_LABEL(blank_label), attr_list_text);
-
-    gtk_grid_attach(GTK_GRID(grid), blank_label, 0, 2, 2, 1);
-    gtk_grid_attach(GTK_GRID(grid), blank_label2, 0, 3, 2, 1);
-    gtk_grid_attach(GTK_GRID(grid), blank_label3, 0, 4, 2, 1);
-
+    gtk_widget_set_margin_bottom(entries[1], 25);  // Space before buttons
+    gtk_box_pack_start(GTK_BOX(form_card), entries[1], FALSE, FALSE, 0);
+    
+    // Buttons integrated in the form card
     GtkWidget *login_button = gtk_button_new_with_label("Login");
     GtkWidget *close_button = gtk_button_new_with_label("Close");
 
-    GtkWidget *buttons[] = {login_button, close_button};
-    for (int i = 0; i < G_N_ELEMENTS(buttons); i++) {
-        gtk_widget_set_margin_top(buttons[i], 10);
-        gtk_widget_set_margin_bottom(buttons[i], 10);
-        if (i == 0) {
-            style_primary_button(buttons[i]);
-            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(login_to_an_account), entries);
-        } else if (i == 1) {
-            style_secondary_button(buttons[i]);
-            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_window), data);
-            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(close_window), login_window);
-        }
-        gtk_box_pack_start(GTK_BOX(lower_box), buttons[i], FALSE, FALSE, 0);
-    }
+    // Style Login button - Green
+    gtk_widget_set_margin_top(login_button, 5);
+    gtk_widget_set_margin_bottom(login_button, 5);
+    gtk_widget_set_halign(login_button, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(login_button, TRUE);
+    style_success_button(login_button);  // Green for Login
+    g_signal_connect(G_OBJECT(login_button), "clicked", G_CALLBACK(login_to_an_account), entries);
+    gtk_box_pack_start(GTK_BOX(form_card), login_button, FALSE, FALSE, 0);
+    
+    // Style Close button - Red
+    gtk_widget_set_margin_top(close_button, 5);
+    gtk_widget_set_margin_bottom(close_button, 5);
+    gtk_widget_set_halign(close_button, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(close_button, TRUE);
+    style_danger_button(close_button);  // Red for Close
+    g_signal_connect(G_OBJECT(close_button), "clicked", G_CALLBACK(show_window), data);
+    g_signal_connect(G_OBJECT(close_button), "clicked", G_CALLBACK(close_window), login_window);
+    gtk_box_pack_start(GTK_BOX(form_card), close_button, FALSE, FALSE, 0);
+    
+    // Spacer to push cards to center (bottom)
+    GtkWidget *spacer_bottom = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_sensitive(spacer_bottom, FALSE);
+    gtk_box_pack_start(GTK_BOX(main_box), spacer_bottom, TRUE, TRUE, 0);
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), main_box);
     gtk_widget_show_all(GTK_WIDGET(login_window));
     gtk_widget_hide(data);  // Hide main menu to be able to show it anytime
@@ -1556,54 +1582,78 @@ void show_register_interface(GtkWidget *widget, gpointer data) {
     GtkWidget *overlay_main_box = gtk_overlay_new();
     gtk_container_add(GTK_CONTAINER(register_window), overlay_main_box);
     GtkWidget *image_app_background = gtk_image_new_from_file("images/app_background.png");
+    gtk_widget_set_sensitive(image_app_background, FALSE);  // Allow clicks to pass through
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), image_app_background);
 
     GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_box_set_spacing(GTK_BOX(main_box), 50);
+    gtk_box_set_spacing(GTK_BOX(main_box), 0);
     gtk_container_set_border_width(GTK_CONTAINER(main_box), 50);
 
-    GtkWidget *upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-    gtk_widget_set_size_request(GTK_WIDGET(upper_box), -1, 320);
-    gtk_box_pack_start(GTK_BOX(main_box), upper_box, TRUE, TRUE, 0);
+    // Header box with logo and title side by side
+    GtkWidget *header_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 20);
+    gtk_widget_set_halign(header_box, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_top(header_box, 50);
+    gtk_widget_set_margin_bottom(header_box, 30);
+    gtk_box_pack_start(GTK_BOX(main_box), header_box, FALSE, FALSE, 0);
 
-    GtkWidget *overlay_upper_box = gtk_overlay_new();
-    gtk_box_pack_start(GTK_BOX(upper_box), overlay_upper_box, TRUE, TRUE, 0);
-    GtkWidget *image_background = gtk_image_new_from_file("images/main_background.jpg");
-    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), image_background);
-
-    GtkWidget *content_box_for_upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    // Logo on the left
     GtkWidget *image_logo = gtk_image_new_from_file("images/bank_logo.png");
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), image_logo, FALSE, FALSE, 50);
+    gtk_box_pack_start(GTK_BOX(header_box), image_logo, FALSE, FALSE, 0);
 
+    // Title and subtitle on the right
+    GtkWidget *title_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     GtkWidget *text_title = gtk_label_new("Register");
-    const gchar *css_title_format = "label { font-size: 72px; color: #FFDFAF; font-weight: bold; }";
-    GtkCssProvider *title_provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(title_provider, css_title_format, -1, NULL);
-    GtkStyleContext *title_context = gtk_widget_get_style_context(text_title);
-    gtk_style_context_add_provider(title_context, GTK_STYLE_PROVIDER(title_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    g_object_unref(title_provider);
-
+    style_title_label(text_title, "#FFDFAF");
     GtkWidget *text_subtitle = gtk_label_new("Create a new account!");
-    const gchar *css_subtitle_format = "label { font-size: 48px; color: #E7E7E7; font-weight: 550; }";
-    GtkCssProvider *subtitle_provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(subtitle_provider, css_subtitle_format, -1, NULL);
-    GtkStyleContext *subtitle_context = gtk_widget_get_style_context(text_subtitle);
-    gtk_style_context_add_provider(subtitle_context, GTK_STYLE_PROVIDER(subtitle_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    g_object_unref(subtitle_provider);
+    style_subtitle_label(text_subtitle, "#E7E7E7");
+    gtk_box_pack_start(GTK_BOX(title_box), text_title, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(title_box), text_subtitle, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(header_box), title_box, FALSE, FALSE, 0);
 
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_title, FALSE, FALSE, 10);
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_subtitle, FALSE, FALSE, 0);
-    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), content_box_for_upper_box);
-
-    GtkWidget *lower_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 30);
-    gtk_widget_set_size_request(GTK_WIDGET(lower_box), -1, 400);
-    gtk_box_pack_start(GTK_BOX(main_box), lower_box, TRUE, TRUE, 0);
+    // Spacer to push form card to center
+    GtkWidget *spacer_top = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_sensitive(spacer_top, FALSE);
+    gtk_box_pack_start(GTK_BOX(main_box), spacer_top, TRUE, TRUE, 0);
+    
+    // Form card container for register (larger card for many fields)
+    GtkWidget *form_card = gtk_box_new(GTK_ORIENTATION_VERTICAL, 20);
+    gtk_widget_set_halign(form_card, GTK_ALIGN_CENTER);
+    gtk_widget_set_size_request(form_card, 1000, -1);
+    gtk_container_set_border_width(GTK_CONTAINER(form_card), 30);
+    
+    // Style the card with background
+    const gchar *card_css = 
+        "box { "
+        "background-color: #FFFFFF; "
+        "border-radius: 12px; "
+        "padding: 30px; "
+        "}";
+    GtkCssProvider *card_provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(card_provider, card_css, -1, NULL);
+    GtkStyleContext *card_context = gtk_widget_get_style_context(form_card);
+    gtk_style_context_add_provider(card_context, GTK_STYLE_PROVIDER(card_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(card_provider);
+    
+    gtk_box_pack_start(GTK_BOX(main_box), form_card, FALSE, FALSE, 0);
 
     GtkWidget *grid = gtk_grid_new(); // Used to make a table with input fields
-    gtk_widget_set_size_request(grid, 1000, -1);
+    gtk_widget_set_size_request(grid, -1, -1);
     gtk_grid_set_row_spacing(GTK_GRID(grid), 20);
     gtk_grid_set_column_spacing(GTK_GRID(grid), 20);
-    gtk_box_pack_start(GTK_BOX(lower_box), grid, FALSE, FALSE, 30);
+    gtk_box_pack_start(GTK_BOX(form_card), grid, FALSE, FALSE, 0);
+    
+    // Spacer to push buttons down
+    GtkWidget *spacer_bottom = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_sensitive(spacer_bottom, FALSE);
+    gtk_box_pack_start(GTK_BOX(main_box), spacer_bottom, TRUE, TRUE, 0);
+    
+    // Buttons container
+    GtkWidget *lower_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
+    gtk_widget_set_size_request(GTK_WIDGET(lower_box), -1, -1);
+    gtk_container_set_border_width(GTK_CONTAINER(lower_box), 50);
+    gtk_widget_set_halign(lower_box, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(lower_box, TRUE);
+    gtk_box_pack_start(GTK_BOX(main_box), lower_box, FALSE, FALSE, 0);
 
     GtkWidget **entries = (GtkWidget **)g_malloc(11 * sizeof(GtkWidget *)); // Dynamic allocation for inputs
 
@@ -1718,22 +1768,22 @@ void show_register_interface(GtkWidget *widget, gpointer data) {
     GtkWidget *create_account_button = gtk_button_new_with_label("Create account");
     GtkWidget *close_button = gtk_button_new_with_label("Close");
 
-    const char *css = "label { font-size: 45px; font-weight: 600; }";
-    GtkCssProvider *buttons_provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(buttons_provider, css, -1, NULL);
     GtkWidget *buttons[] = {create_account_button, close_button};
     for (int i = 0; i < G_N_ELEMENTS(buttons); i++) {
-        GtkWidget *label = gtk_bin_get_child(GTK_BIN(buttons[i]));
-        gtk_style_context_add_provider(gtk_widget_get_style_context(label), GTK_STYLE_PROVIDER(buttons_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        gtk_widget_set_margin_top(buttons[i], 8);
+        gtk_widget_set_margin_bottom(buttons[i], 8);
+        gtk_widget_set_halign(buttons[i], GTK_ALIGN_CENTER);
+        gtk_widget_set_hexpand(buttons[i], TRUE);
         if (i == 0) {
+            style_success_button(buttons[i]);
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(create_an_account), entries);
         } else if (i == 1) {
+            style_danger_button(buttons[i]);
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_window), data);
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(close_window), register_window);
         }
-        gtk_box_pack_start(GTK_BOX(lower_box), buttons[i], TRUE, TRUE, 0);
+        gtk_box_pack_start(GTK_BOX(lower_box), buttons[i], FALSE, FALSE, 0);
     }
-    g_object_unref(buttons_provider);
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), main_box);
     gtk_widget_show_all(GTK_WIDGET(register_window));
     gtk_widget_hide(data); // Hide main menu to be able to show it anytime
@@ -1772,37 +1822,39 @@ void activate_main_menu(GtkApplication *newApp, gpointer data) {
     gtk_box_set_spacing(GTK_BOX(main_box), 0);
     gtk_container_set_border_width(GTK_CONTAINER(main_box), 50);
 
-    GtkWidget *upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-    gtk_widget_set_size_request(GTK_WIDGET(upper_box), -1, 350);
-    gtk_box_pack_start(GTK_BOX(main_box), upper_box, FALSE, FALSE, 0);
-
-    // Temporarily removed banner background image to test click issue
-    // GtkWidget *overlay_upper_box = gtk_overlay_new();
-    // gtk_box_pack_start(GTK_BOX(upper_box), overlay_upper_box, TRUE, TRUE, 0);
-    // GtkWidget *image_background = gtk_image_new_from_file("images/main_background.jpg");
-    // gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), image_background);
-
-    GtkWidget *content_box_for_upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    // Spacer to push header to center
+    GtkWidget *spacer_top = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_sensitive(spacer_top, FALSE);
+    gtk_box_pack_start(GTK_BOX(main_box), spacer_top, TRUE, TRUE, 0);
+    
+    // Header box with logo, title and subtitle in column (centered like login)
+    GtkWidget *header_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_set_halign(header_box, GTK_ALIGN_CENTER);
+    gtk_widget_set_margin_top(header_box, 30);
+    gtk_widget_set_margin_bottom(header_box, 20);
+    
+    // Logo on top
     GtkWidget *image_logo = gtk_image_new_from_file("images/bank_logo.png");
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), image_logo, FALSE, FALSE, 30);  // Reduced from 40 to 30
+    gtk_widget_set_halign(image_logo, GTK_ALIGN_CENTER);
+    gtk_box_pack_start(GTK_BOX(header_box), image_logo, FALSE, FALSE, 0);
 
+    // Title below logo
     GtkWidget *text_title = gtk_label_new("Gentlix Bank");
     style_title_label(text_title, "#FFDFAF");
+    gtk_widget_set_halign(text_title, GTK_ALIGN_CENTER);
+    gtk_box_pack_start(GTK_BOX(header_box), text_title, FALSE, FALSE, 10);
 
-    GtkWidget *text_subtitle = gtk_label_new("Welcome back!");
+    // Subtitle below title
+    GtkWidget *text_subtitle = gtk_label_new("Banking reimagined, simplified");
     style_subtitle_label(text_subtitle, "#E7E7E7");
-
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_title, FALSE, FALSE, 10);  // Reduced from 15 to 10
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_subtitle, FALSE, FALSE, 0);  // Reduced from 5 to 0
-    // Temporarily removed overlay - add content directly to upper_box
-    // gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), content_box_for_upper_box);
-    gtk_box_pack_start(GTK_BOX(upper_box), content_box_for_upper_box, TRUE, TRUE, 0);
-
-    // Removed second "Gentlix Bank" text below the banner
-
-    // Spacer to push buttons to bottom - creates empty space in the middle
+    gtk_widget_set_halign(text_subtitle, GTK_ALIGN_CENTER);
+    gtk_box_pack_start(GTK_BOX(header_box), text_subtitle, FALSE, FALSE, 0);
+    
+    gtk_box_pack_start(GTK_BOX(main_box), header_box, FALSE, FALSE, 0);
+    
+    // Spacer to push buttons to bottom
     GtkWidget *spacer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_widget_set_sensitive(spacer, FALSE);  // Allow clicks to pass through spacer
+    gtk_widget_set_sensitive(spacer, FALSE);
     gtk_box_pack_start(GTK_BOX(main_box), spacer, TRUE, TRUE, 0);
     
     // Group buttons at the bottom - match width with upper banner
@@ -1829,13 +1881,13 @@ void activate_main_menu(GtkApplication *newApp, gpointer data) {
             style_primary_button(buttons[i]);
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_login_interface), main_window);
         } else if (i == 1) {
-            style_success_button(buttons[i]);
+            style_success_button_main_menu(buttons[i]);  // Green with dark text for main menu
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_register_interface), main_window);
         } else if (i == 2) {
             style_warning_button(buttons[i]);
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_import_interface), NULL);
         } else if (i == 3) {
-            style_danger_button(buttons[i]);
+            style_danger_button_main_menu(buttons[i]);  // Red with dark text for main menu
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(close_window), G_OBJECT(main_window));
         }
         gtk_box_pack_start(GTK_BOX(lower_box), buttons[i], FALSE, FALSE, 0);
