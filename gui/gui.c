@@ -27,6 +27,117 @@ void show_error(gchar *message){
     gtk_widget_destroy(error_dialog);
 }
 
+// Helper function to style buttons with modern design (GTK 3.0 compatible)
+void style_button(GtkWidget *button, const char *bg_color, const char *hover_color, const char *text_color) {
+    gchar *css = g_strdup_printf(
+        "button { "
+        "background-color: %s; "
+        "color: %s; "
+        "border: none; "
+        "border-radius: 8px; "
+        "padding: 15px 40px; "
+        "font-size: 18px; "
+        "font-weight: 700; "
+        "min-width: 400px; "
+        "} "
+        "button:hover { "
+        "background-color: %s; "
+        "} "
+        "button:active { "
+        "background-color: %s; "
+        "}",
+        bg_color, text_color, hover_color, hover_color
+    );
+    GtkCssProvider *provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(provider, css, -1, NULL);
+    GtkStyleContext *context = gtk_widget_get_style_context(button);
+    gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(provider);
+    g_free(css);
+}
+
+// Helper function to style primary buttons (blue)
+void style_primary_button(GtkWidget *button) {
+    style_button(button, "#4A90E2", "#357ABD", "#1A1A1A");
+}
+
+// Helper function to style success buttons (green)
+void style_success_button(GtkWidget *button) {
+    style_button(button, "#2ECC71", "#27AE60", "#1A1A1A");
+}
+
+// Helper function to style danger buttons (red)
+void style_danger_button(GtkWidget *button) {
+    style_button(button, "#E74C3C", "#C0392B", "#1A1A1A");
+}
+
+// Helper function to style warning buttons (orange)
+void style_warning_button(GtkWidget *button) {
+    style_button(button, "#F39C12", "#D68910", "#1A1A1A");
+}
+
+// Helper function to style secondary buttons (gray)
+void style_secondary_button(GtkWidget *button) {
+    style_button(button, "#95A5A6", "#7F8C8D", "#1A1A1A");
+}
+
+// Helper function to style title labels
+void style_title_label(GtkWidget *label, const char *color) {
+    gchar *css = g_strdup_printf(
+        "label { "
+        "font-size: 56px; "
+        "color: %s; "
+        "font-weight: bold; "
+        "}",
+        color
+    );
+    GtkCssProvider *provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(provider, css, -1, NULL);
+    GtkStyleContext *context = gtk_widget_get_style_context(label);
+    gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(provider);
+    g_free(css);
+}
+
+// Helper function to style subtitle labels
+void style_subtitle_label(GtkWidget *label, const char *color) {
+    gchar *css = g_strdup_printf(
+        "label { "
+        "font-size: 22px; "
+        "color: %s; "
+        "font-weight: 500; "
+        "}",
+        color
+    );
+    GtkCssProvider *provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(provider, css, -1, NULL);
+    GtkStyleContext *context = gtk_widget_get_style_context(label);
+    gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(provider);
+    g_free(css);
+}
+
+// Helper function to style entry fields
+void style_entry(GtkWidget *entry) {
+    const char *css = 
+        "entry { "
+        "background-color: #FFFFFF; "
+        "border: 2px solid #BDC3C7; "
+        "border-radius: 6px; "
+        "padding: 10px 14px; "
+        "font-size: 16px; "
+        "color: #2C3E50; "
+        "} "
+        "entry:focus { "
+        "border-color: #4A90E2; "
+        "}";
+    GtkCssProvider *provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(provider, css, -1, NULL);
+    GtkStyleContext *context = gtk_widget_get_style_context(entry);
+    gtk_style_context_add_provider(context, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    g_object_unref(provider);
+}
+
 void handleErrorCode(int errorCode) {
 
     switch (errorCode) {
@@ -492,7 +603,19 @@ void login_to_an_account(GtkWidget *widget, gpointer data){
 // gpointer data - provides the location inside the memory for inputs
 void create_an_account(GtkWidget *widget, gpointer data){
 
+    if (data == NULL) {
+        show_error("Invalid form data!");
+        return;
+    }
+
     GtkWidget **entries = (GtkWidget **)data;
+    
+    // Validate entries before accessing them
+    if (entries == NULL || entries[0] == NULL) {
+        show_error("Form entries not initialized!");
+        return;
+    }
+    
     const gchar *account_tag = gtk_entry_get_text(GTK_ENTRY(entries[0]));
     const gchar *account_password = gtk_entry_get_text(GTK_ENTRY(entries[1]));
     const gchar *account_password2 = gtk_entry_get_text(GTK_ENTRY(entries[2]));
@@ -720,7 +843,6 @@ void show_new_transaction_interface(GtkWidget *widget, gpointer data) {
 
     entries[0] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[0]), "Enter money amount");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[0]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[0]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[0], 1, 0, 1, 1);
 
@@ -730,7 +852,6 @@ void show_new_transaction_interface(GtkWidget *widget, gpointer data) {
 
     entries[1] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[1]), "Enter transfer's description");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[1]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[1]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[1], 1, 1, 1, 1);
 
@@ -740,7 +861,6 @@ void show_new_transaction_interface(GtkWidget *widget, gpointer data) {
 
     entries[2] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[2]), "Enter the day");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[2]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[2]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[2], 3, 0, 1, 1);
 
@@ -750,7 +870,6 @@ void show_new_transaction_interface(GtkWidget *widget, gpointer data) {
 
     entries[3] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[3]), "Enter the month");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[3]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[3]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[3], 3, 1, 1, 1);
 
@@ -760,7 +879,6 @@ void show_new_transaction_interface(GtkWidget *widget, gpointer data) {
 
     entries[4] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[4]), "Enter the year");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[4]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[4]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[4], 3, 2, 1, 1);
 
@@ -770,7 +888,6 @@ void show_new_transaction_interface(GtkWidget *widget, gpointer data) {
 
     entries[5] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[5]), "Enter receiver IBAN (only for transfer)");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[5]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[5]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[5], 1, 2, 1, 1);
 
@@ -1077,7 +1194,6 @@ void show_edit_account_interface(GtkWidget *widget, gpointer data){
 
     entries[0] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[0]), "Enter the password");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[0]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[0]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[0], 1, 0, 1, 1);
 
@@ -1087,7 +1203,6 @@ void show_edit_account_interface(GtkWidget *widget, gpointer data){
 
     entries[1] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[1]), "Enter new password");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[1]), attr_list_entry);
     gtk_entry_set_visibility(GTK_ENTRY(entries[1]), FALSE);
     gtk_entry_set_invisible_char(GTK_ENTRY(entries[1]), '*');
     gtk_grid_attach(GTK_GRID(grid), entries[1], 1, 1, 1, 1);
@@ -1098,7 +1213,6 @@ void show_edit_account_interface(GtkWidget *widget, gpointer data){
 
     entries[2] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[2]), "Repeat new password");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[2]), attr_list_entry);
     gtk_entry_set_visibility(GTK_ENTRY(entries[2]), FALSE);
     gtk_entry_set_invisible_char(GTK_ENTRY(entries[2]), '*');
     gtk_grid_attach(GTK_GRID(grid), entries[2], 1, 2, 1, 1);
@@ -1109,7 +1223,6 @@ void show_edit_account_interface(GtkWidget *widget, gpointer data){
 
     entries[3] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[3]), "Enter account type");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[3]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[3]), 50);
     gtk_grid_attach(GTK_GRID(grid),  entries[3], 1, 3, 1, 1);
 
@@ -1119,7 +1232,6 @@ void show_edit_account_interface(GtkWidget *widget, gpointer data){
 
     entries[4] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[4]), "Enter your phone number");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[4]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[4]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[4], 1, 4, 1, 1);
 
@@ -1129,7 +1241,6 @@ void show_edit_account_interface(GtkWidget *widget, gpointer data){
 
     entries[5] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[5]), "Enter your first name");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[5]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[5]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[5], 3, 0, 1, 1);
 
@@ -1139,7 +1250,6 @@ void show_edit_account_interface(GtkWidget *widget, gpointer data){
 
     entries[6] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[6]), "Enter your second name");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[6]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[6]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[6], 3, 1, 1, 1);
 
@@ -1149,7 +1259,6 @@ void show_edit_account_interface(GtkWidget *widget, gpointer data){
 
     entries[7] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[7]), "Enter the day");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[7]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[7]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[7], 3, 2, 1, 1);
 
@@ -1159,7 +1268,6 @@ void show_edit_account_interface(GtkWidget *widget, gpointer data){
 
     entries[8] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[8]), "Enter the month");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[8]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[8]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[8], 3, 3, 1, 1);
 
@@ -1169,7 +1277,6 @@ void show_edit_account_interface(GtkWidget *widget, gpointer data){
 
     entries[9] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[9]), "Enter the year");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[9]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[9]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[9], 3, 4, 1, 1);
 
@@ -1229,12 +1336,7 @@ void show_account_interface() {
     gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), image_logo, FALSE, FALSE, 50);
 
     GtkWidget *text_title = gtk_label_new("Your account");
-    const gchar *css_title_format = "label { font-size: 72px; color: #FFDFAF; font-weight: bold; }";
-    GtkCssProvider *title_provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(title_provider, css_title_format, -1, NULL);
-    GtkStyleContext *title_context = gtk_widget_get_style_context(text_title);
-    gtk_style_context_add_provider(title_context, GTK_STYLE_PROVIDER(title_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    g_object_unref(title_provider);
+    style_title_label(text_title, "#FFDFAF");
 
     gchar *text_for_subtitle;
     if (currentAccount != NULL) {
@@ -1246,20 +1348,16 @@ void show_account_interface() {
     GtkWidget *text_subtitle = gtk_label_new(NULL);
     gtk_label_set_text(GTK_LABEL(text_subtitle), text_for_subtitle);
     g_free(text_for_subtitle);
-    const gchar *css_subtitle_format = "label { font-size: 48px; color: #E7E7E7; font-weight: 550; }";
-    GtkCssProvider *subtitle_provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(subtitle_provider, css_subtitle_format, -1, NULL);
-    GtkStyleContext *subtitle_context = gtk_widget_get_style_context(text_subtitle);
-    gtk_style_context_add_provider(subtitle_context, GTK_STYLE_PROVIDER(subtitle_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    g_object_unref(subtitle_provider);
+    style_subtitle_label(text_subtitle, "#E7E7E7");
 
     gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_title, FALSE, FALSE, 10);
     gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_subtitle, FALSE, FALSE, 0);
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), content_box_for_upper_box);
 
-    GtkWidget *lower_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 30);
+    GtkWidget *lower_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 20);
     gtk_widget_set_size_request(GTK_WIDGET(lower_box), -1, 400);
     gtk_box_pack_start(GTK_BOX(main_box), lower_box, TRUE, TRUE, 0);
+    gtk_container_set_border_width(GTK_CONTAINER(lower_box), 40);
 
     GtkWidget *new_transaction = gtk_button_new_with_label("New transaction");
     GtkWidget *transactions_button = gtk_button_new_with_label("Your transactions");
@@ -1268,23 +1366,26 @@ void show_account_interface() {
     GtkWidget *delete_button = gtk_button_new_with_label("Delete account");
     GtkWidget *logout_button = gtk_button_new_with_label("Logout");
 
-    const char *css = "label { font-size: 45px; font-weight: 600; }";
-    GtkCssProvider *buttons_provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(buttons_provider, css, -1, NULL);
     GtkWidget *buttons[] = {new_transaction, transactions_button, statements_button, edit_button, delete_button, logout_button};
     for (int i = 0; i < G_N_ELEMENTS(buttons); i++) {
-        GtkWidget *label = gtk_bin_get_child(GTK_BIN(buttons[i]));
-        gtk_style_context_add_provider(gtk_widget_get_style_context(label), GTK_STYLE_PROVIDER(buttons_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        gtk_widget_set_margin_top(buttons[i], 8);
+        gtk_widget_set_margin_bottom(buttons[i], 8);
+        // Style buttons based on their function
         if (i == 0) {
+            style_primary_button(buttons[i]);
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_new_transaction_interface), your_account_window);
         } else if (i == 1) {
+            style_success_button(buttons[i]);
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_all_transactions_interface), your_account_window);
         } else if (i == 2) {
+            style_secondary_button(buttons[i]);
             // Account statements - placeholder for future implementation
-            show_error("Account statements feature coming soon!");
+            g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_error), "Account statements feature coming soon!");
         } else if (i == 3) {
+            style_warning_button(buttons[i]);
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_edit_account_interface), your_account_window);
         } else if (i == 4) {
+            style_danger_button(buttons[i]);
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(delete_an_account), NULL);
             GtkWidget *main_window = g_object_get_data(G_OBJECT(app), "main_window");
             if (main_window != NULL) {
@@ -1292,6 +1393,7 @@ void show_account_interface() {
             }
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(close_window), your_account_window);
         } else if (i == 5) {
+            style_secondary_button(buttons[i]);
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(logout_from_an_account), NULL);
             GtkWidget *main_window = g_object_get_data(G_OBJECT(app), "main_window");
             if (main_window != NULL) {
@@ -1299,9 +1401,8 @@ void show_account_interface() {
             }
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(close_window), your_account_window);
         }
-        gtk_box_pack_start(GTK_BOX(lower_box), buttons[i], TRUE, TRUE, 0);
+        gtk_box_pack_start(GTK_BOX(lower_box), buttons[i], FALSE, FALSE, 0);
     }
-    g_object_unref(buttons_provider);
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), main_box);
     gtk_widget_show_all(GTK_WIDGET(your_account_window));
 }
@@ -1342,20 +1443,10 @@ void show_login_interface(GtkWidget *widget, gpointer data) {
     gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), image_logo, FALSE, FALSE, 50);
 
     GtkWidget *text_title = gtk_label_new("Login");
-    const gchar *css_title_format = "label { font-size: 72px; color: #FFDFAF; font-weight: bold; }";
-    GtkCssProvider *title_provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(title_provider, css_title_format, -1, NULL);
-    GtkStyleContext *title_context = gtk_widget_get_style_context(text_title);
-    gtk_style_context_add_provider(title_context, GTK_STYLE_PROVIDER(title_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    g_object_unref(title_provider);
+    style_title_label(text_title, "#FFDFAF");
 
     GtkWidget *text_subtitle = gtk_label_new("Enter your account!");
-    const gchar *css_subtitle_format = "label { font-size: 48px; color: #E7E7E7; font-weight: 550; }";
-    GtkCssProvider *subtitle_provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(subtitle_provider, css_subtitle_format, -1, NULL);
-    GtkStyleContext *subtitle_context = gtk_widget_get_style_context(text_subtitle);
-    gtk_style_context_add_provider(subtitle_context, GTK_STYLE_PROVIDER(subtitle_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    g_object_unref(subtitle_provider);
+    style_subtitle_label(text_subtitle, "#E7E7E7");
 
     gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_title, FALSE, FALSE, 10);
     gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_subtitle, FALSE, FALSE, 0);
@@ -1364,11 +1455,14 @@ void show_login_interface(GtkWidget *widget, gpointer data) {
     GtkWidget *lower_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 30);
     gtk_widget_set_size_request(GTK_WIDGET(lower_box), -1, 400);
     gtk_box_pack_start(GTK_BOX(main_box), lower_box, TRUE, TRUE, 0);
+    gtk_container_set_border_width(GTK_CONTAINER(lower_box), 40);
 
     GtkWidget *grid = gtk_grid_new();
     gtk_widget_set_size_request(grid, 100, -1);
-    gtk_grid_set_row_spacing(GTK_GRID(grid), 20);
-    gtk_grid_set_column_spacing(GTK_GRID(grid), 20);
+    gtk_grid_set_row_spacing(GTK_GRID(grid), 25);
+    gtk_grid_set_column_spacing(GTK_GRID(grid), 30);
+    gtk_grid_set_row_homogeneous(GTK_GRID(grid), FALSE);
+    gtk_grid_set_column_homogeneous(GTK_GRID(grid), FALSE);
     gtk_box_pack_start(GTK_BOX(lower_box), grid, FALSE, FALSE, 30);
 
     GtkWidget **entries = (GtkWidget **)g_malloc(3 * sizeof(GtkWidget *)); // Dynamic allocation for inputs
@@ -1391,8 +1485,10 @@ void show_login_interface(GtkWidget *widget, gpointer data) {
 
     entries[0] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[0]), "Enter your account tag");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[0]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[0]), 50);
+    style_entry(entries[0]);
+    gtk_widget_set_margin_start(entries[0], 15);
+    gtk_widget_set_margin_end(entries[0], 15);
     gtk_grid_attach(GTK_GRID(grid), entries[0], 1, 0, 1, 1);
 
     GtkWidget *password_label = gtk_label_new("                          Password:");
@@ -1401,10 +1497,12 @@ void show_login_interface(GtkWidget *widget, gpointer data) {
 
     entries[1] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[1]), "Enter account password");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[1]), attr_list_entry);
     gtk_entry_set_visibility(GTK_ENTRY(entries[1]), FALSE);
     gtk_entry_set_invisible_char(GTK_ENTRY(entries[1]), '*');
     gtk_entry_set_width_chars(GTK_ENTRY(entries[1]), 50);
+    style_entry(entries[1]);
+    gtk_widget_set_margin_start(entries[1], 15);
+    gtk_widget_set_margin_end(entries[1], 15);
     gtk_grid_attach(GTK_GRID(grid), entries[1], 3, 0, 1, 1);
 
     GtkWidget *blank_label = gtk_label_new(" \n");
@@ -1423,22 +1521,20 @@ void show_login_interface(GtkWidget *widget, gpointer data) {
     GtkWidget *login_button = gtk_button_new_with_label("Login");
     GtkWidget *close_button = gtk_button_new_with_label("Close");
 
-    const char *css = "label { font-size: 45px; font-weight: 600; }";
-    GtkCssProvider *buttons_provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(buttons_provider, css, -1, NULL);
     GtkWidget *buttons[] = {login_button, close_button};
     for (int i = 0; i < G_N_ELEMENTS(buttons); i++) {
-        GtkWidget *label = gtk_bin_get_child(GTK_BIN(buttons[i]));
-        gtk_style_context_add_provider(gtk_widget_get_style_context(label), GTK_STYLE_PROVIDER(buttons_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        gtk_widget_set_margin_top(buttons[i], 10);
+        gtk_widget_set_margin_bottom(buttons[i], 10);
         if (i == 0) {
+            style_primary_button(buttons[i]);
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(login_to_an_account), entries);
         } else if (i == 1) {
+            style_secondary_button(buttons[i]);
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_window), data);
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(close_window), login_window);
         }
-        gtk_box_pack_start(GTK_BOX(lower_box), buttons[i], TRUE, TRUE, 0);
+        gtk_box_pack_start(GTK_BOX(lower_box), buttons[i], FALSE, FALSE, 0);
     }
-    g_object_unref(buttons_provider);
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), main_box);
     gtk_widget_show_all(GTK_WIDGET(login_window));
     gtk_widget_hide(data);  // Hide main menu to be able to show it anytime
@@ -1531,7 +1627,6 @@ void show_register_interface(GtkWidget *widget, gpointer data) {
 
     entries[0] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[0]), "Enter an account tag");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[0]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[0]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[0], 1, 0, 1, 1);
 
@@ -1541,9 +1636,9 @@ void show_register_interface(GtkWidget *widget, gpointer data) {
 
     entries[1] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[1]), "Enter account password");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[1]), attr_list_entry);
     gtk_entry_set_visibility(GTK_ENTRY(entries[1]), FALSE);
     gtk_entry_set_invisible_char(GTK_ENTRY(entries[1]), '*');
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[1]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[1], 1, 1, 1, 1);
 
     GtkWidget *confirm_password_label = gtk_label_new("                    Confirm Password:");
@@ -1552,9 +1647,9 @@ void show_register_interface(GtkWidget *widget, gpointer data) {
 
     entries[2] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[2]), "Repeat account password");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[2]), attr_list_entry);
     gtk_entry_set_visibility(GTK_ENTRY(entries[2]), FALSE);
     gtk_entry_set_invisible_char(GTK_ENTRY(entries[2]), '*');
+    gtk_entry_set_width_chars(GTK_ENTRY(entries[2]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[2], 1, 2, 1, 1);
 
     GtkWidget *account_type_label = gtk_label_new("                    Account Type:");
@@ -1563,7 +1658,6 @@ void show_register_interface(GtkWidget *widget, gpointer data) {
 
     entries[3] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[3]), "Enter account type");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[3]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[3]), 50);
     gtk_grid_attach(GTK_GRID(grid),  entries[3], 1, 3, 1, 1);
 
@@ -1573,7 +1667,6 @@ void show_register_interface(GtkWidget *widget, gpointer data) {
 
     entries[4] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[4]), "Enter your phone number");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[4]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[4]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[4], 1, 4, 1, 1);
 
@@ -1583,7 +1676,6 @@ void show_register_interface(GtkWidget *widget, gpointer data) {
 
     entries[5] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[5]), "Enter your first name");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[5]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[5]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[5], 3, 0, 1, 1);
 
@@ -1593,7 +1685,6 @@ void show_register_interface(GtkWidget *widget, gpointer data) {
 
     entries[6] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[6]), "Enter your second name");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[6]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[6]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[6], 3, 1, 1, 1);
 
@@ -1603,7 +1694,6 @@ void show_register_interface(GtkWidget *widget, gpointer data) {
 
     entries[7] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[7]), "Enter the day");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[7]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[7]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[7], 3, 2, 1, 1);
 
@@ -1613,7 +1703,6 @@ void show_register_interface(GtkWidget *widget, gpointer data) {
 
     entries[8] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[8]), "Enter the month");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[8]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[8]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[8], 3, 3, 1, 1);
 
@@ -1623,7 +1712,6 @@ void show_register_interface(GtkWidget *widget, gpointer data) {
 
     entries[9] = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entries[9]), "Enter the year");
-    gtk_entry_set_attributes(GTK_ENTRY(entries[9]), attr_list_entry);
     gtk_entry_set_width_chars(GTK_ENTRY(entries[9]), 50);
     gtk_grid_attach(GTK_GRID(grid), entries[9], 3, 4, 1, 1);
 
@@ -1676,16 +1764,18 @@ void activate_main_menu(GtkApplication *newApp, gpointer data) {
 
     GtkWidget *overlay_main_box = gtk_overlay_new();
     gtk_container_add(GTK_CONTAINER(main_window), overlay_main_box);
-    GtkWidget *image_app_background = gtk_image_new_from_file("images/app_background.png");
-    gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), image_app_background);
+    // Temporarily removed background image to test click issue
+    // GtkWidget *image_app_background = gtk_image_new_from_file("images/app_background.png");
+    // gtk_widget_set_sensitive(image_app_background, FALSE);  // Allow clicks to pass through
+    // gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), image_app_background);
 
     GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-    gtk_box_set_spacing(GTK_BOX(main_box), 50);
+    gtk_box_set_spacing(GTK_BOX(main_box), 0);
     gtk_container_set_border_width(GTK_CONTAINER(main_box), 50);
 
     GtkWidget *upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
-    gtk_widget_set_size_request(GTK_WIDGET(upper_box), -1, 320);
-    gtk_box_pack_start(GTK_BOX(main_box), upper_box, TRUE, TRUE, 0);
+    gtk_widget_set_size_request(GTK_WIDGET(upper_box), -1, 350);
+    gtk_box_pack_start(GTK_BOX(main_box), upper_box, FALSE, FALSE, 0);
 
     GtkWidget *overlay_upper_box = gtk_overlay_new();
     gtk_box_pack_start(GTK_BOX(upper_box), overlay_upper_box, TRUE, TRUE, 0);
@@ -1694,56 +1784,69 @@ void activate_main_menu(GtkApplication *newApp, gpointer data) {
 
     GtkWidget *content_box_for_upper_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
     GtkWidget *image_logo = gtk_image_new_from_file("images/bank_logo.png");
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), image_logo, FALSE, FALSE, 50);
+    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), image_logo, FALSE, FALSE, 40);
 
     GtkWidget *text_title = gtk_label_new("Gentlix Bank");
-    const gchar *css_title_format = "label { font-size: 72px; color: #FFDFAF; font-weight: bold; }";
-    GtkCssProvider *title_provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(title_provider, css_title_format, -1, NULL);
-    GtkStyleContext *title_context = gtk_widget_get_style_context(text_title);
-    gtk_style_context_add_provider(title_context, GTK_STYLE_PROVIDER(title_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    g_object_unref(title_provider);
+    style_title_label(text_title, "#FFDFAF");
 
     GtkWidget *text_subtitle = gtk_label_new("Welcome back!");
-    const gchar *css_subtitle_format = "label { font-size: 48px; color: #E7E7E7; font-weight: 550; }";
-    GtkCssProvider *subtitle_provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(subtitle_provider, css_subtitle_format, -1, NULL);
-    GtkStyleContext *subtitle_context = gtk_widget_get_style_context(text_subtitle);
-    gtk_style_context_add_provider(subtitle_context, GTK_STYLE_PROVIDER(subtitle_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    g_object_unref(subtitle_provider);
+    style_subtitle_label(text_subtitle, "#E7E7E7");
 
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_title, FALSE, FALSE, 10);
-    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_subtitle, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_title, FALSE, FALSE, 15);
+    gtk_box_pack_start(GTK_BOX(content_box_for_upper_box), text_subtitle, FALSE, FALSE, 5);
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay_upper_box), content_box_for_upper_box);
 
-    GtkWidget *lower_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 30);
-    gtk_widget_set_size_request(GTK_WIDGET(lower_box), -1, 400);
-    gtk_box_pack_start(GTK_BOX(main_box), lower_box, TRUE, TRUE, 0);
+    // Add "Gentlix Bank" text below the banner
+    GtkWidget *bank_text = gtk_label_new("Gentlix Bank");
+    style_title_label(bank_text, "#2C3E50");
+    gtk_widget_set_margin_top(bank_text, 30);
+    gtk_widget_set_margin_bottom(bank_text, 20);
+    gtk_widget_set_halign(bank_text, GTK_ALIGN_CENTER);
+    gtk_box_pack_start(GTK_BOX(main_box), bank_text, FALSE, FALSE, 0);
+
+    // Spacer to push buttons to bottom - creates empty space in the middle
+    GtkWidget *spacer = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_widget_set_sensitive(spacer, FALSE);  // Allow clicks to pass through spacer
+    gtk_box_pack_start(GTK_BOX(main_box), spacer, TRUE, TRUE, 0);
+    
+    // Group buttons at the bottom - match width with upper banner
+    GtkWidget *lower_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 15);
+    gtk_widget_set_size_request(GTK_WIDGET(lower_box), -1, -1);
+    gtk_container_set_border_width(GTK_CONTAINER(lower_box), 50);  // Match main_box border
+    gtk_widget_set_halign(lower_box, GTK_ALIGN_CENTER);
+    gtk_widget_set_hexpand(lower_box, TRUE);  // Allow horizontal expansion
+    gtk_widget_set_vexpand(lower_box, FALSE);  // Don't expand vertically
+    gtk_box_pack_start(GTK_BOX(main_box), lower_box, FALSE, FALSE, 0);
 
     GtkWidget *login_button = gtk_button_new_with_label("Login");
     GtkWidget *register_button = gtk_button_new_with_label("Register");
     GtkWidget *admin_button = gtk_button_new_with_label("Admin");
     GtkWidget *close_button = gtk_button_new_with_label("Close");
 
-    const char *css = "label { font-size: 45px; font-weight: 600; }";
-    GtkCssProvider *buttons_provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(buttons_provider, css, -1, NULL);
     GtkWidget *buttons[] = {login_button, register_button, admin_button, close_button};
     for (int i = 0; i < G_N_ELEMENTS(buttons); i++) {
-        GtkWidget *label = gtk_bin_get_child(GTK_BIN(buttons[i]));
-        gtk_style_context_add_provider(gtk_widget_get_style_context(label), GTK_STYLE_PROVIDER(buttons_provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        gtk_widget_set_margin_top(buttons[i], 8);
+        gtk_widget_set_margin_bottom(buttons[i], 8);
+        gtk_widget_set_halign(buttons[i], GTK_ALIGN_CENTER);
+        gtk_widget_set_hexpand(buttons[i], TRUE);  // Allow buttons to expand horizontally
         if (i == 0) {
+            style_primary_button(buttons[i]);
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_login_interface), main_window);
         } else if (i == 1) {
+            style_success_button(buttons[i]);
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_register_interface), main_window);
         } else if (i == 2) {
+            style_warning_button(buttons[i]);
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(show_import_interface), NULL);
         } else if (i == 3) {
+            style_danger_button(buttons[i]);
             g_signal_connect(G_OBJECT(buttons[i]), "clicked", G_CALLBACK(close_window), G_OBJECT(main_window));
         }
-        gtk_box_pack_start(GTK_BOX(lower_box), buttons[i], TRUE, TRUE, 0);
+        gtk_box_pack_start(GTK_BOX(lower_box), buttons[i], FALSE, FALSE, 0);
     }
-    g_object_unref(buttons_provider);
+    // Add main_box to overlay AFTER image_app_background so it's on top and receives events
     gtk_overlay_add_overlay(GTK_OVERLAY(overlay_main_box), main_box);
+    // Ensure main_box receives events
+    gtk_widget_set_events(main_box, GDK_ALL_EVENTS_MASK);
     gtk_widget_show_all(main_window); // Show the main_window after all formats
 }
