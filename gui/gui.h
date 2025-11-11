@@ -13,7 +13,7 @@ void withdraw_from_balance(GtkWidget *widget, gpointer data);
 void make_a_payment(GtkWidget *widget, gpointer data);
 void make_a_transaction(GtkWidget *widget, gpointer data);
 void logout_from_an_account();
-void delete_an_account();
+void delete_an_account(GtkWidget *widget, gpointer data);
 void edit_an_account(GtkWidget *widget, gpointer data);
 void login_to_an_account(GtkWidget *widget, gpointer data);
 void create_an_account(GtkWidget *widget, gpointer data);

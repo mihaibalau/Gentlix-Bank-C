@@ -108,13 +108,15 @@ int removeAccountFromRepository(RepositoryFormat* receivedRepository, const char
     if (indexToRemove == -1)
         return -53;
 
+    // destroyAccount already calls free(account) internally, so we don't need to free it again
     destroyAccount(receivedRepository->accounts[indexToRemove]);
-    free(receivedRepository->accounts[indexToRemove]);
+    receivedRepository->accounts[indexToRemove] = NULL;  // Set to NULL for safety
 
     for (int i = indexToRemove; i < receivedRepository->numberOfElements - 1; i++) {
         receivedRepository->accounts[i] = receivedRepository->accounts[i + 1];
     }
 
+    receivedRepository->accounts[receivedRepository->numberOfElements - 1] = NULL;  // Clear the last element
     receivedRepository->numberOfElements--;
 
     return 1;
